@@ -1,5 +1,5 @@
 // Appwrite Configuration for Google OAuth
-const APPWRITE_ENDPOINT = 'https://cloud.appwrite.io/v1'; // Your Appwrite endpoint
+const APPWRITE_ENDPOINT = 'https://fra.cloud.appwrite.io/v1'; // Your Appwrite endpoint
 const APPWRITE_PROJECT_ID = '6aa2a30b001a88e1a8ee'; // Your Appwrite Project ID
 
 // Initialize Appwrite Client
