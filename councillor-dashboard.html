@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Councillor Dashboard - Student Career Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        primary: { 50: '#eef2ff', 100: '#e0e7ff', 500: '#6366f1', 600: '#4f46e5', 900: '#312e81' },
+                        slate: { 850: '#151e2e', 950: '#020617' }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .page-section {
+            display: block;
+        }
+        .page-section.hidden {
+            display: none;
+        }
+        
+        /* Mobile responsive adjustments */
+        @media (max-width: 1023px) {
+            body {
+                overflow-x: hidden;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 h-screen flex overflow-hidden">
+
+    <!-- Authentication Check - Redirect to login if not logged in or wrong role -->
+    <script>
+        (function() {
+            const currentUser = localStorage.getItem('currentUser');
+            const userRole = localStorage.getItem('userRole');
+            
+            if (!currentUser || !userRole) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            const user = JSON.parse(currentUser);
+            if (user.role !== 'councillor') {
+                // Redirect to appropriate dashboard based on role
+                if (user.role === 'hoster') {
+                    window.location.href = 'hoster-dashboard.html';
+                } else if (user.role === 'poster') {
+                    window.location.href = 'poster-dashboard.html';
+                } else {
+                    window.location.href = 'index.html';
+                }
+            }
+        })();
+    </script>
+
+    <!-- Mobile Overlay -->
+    <div id="mobile-overlay" onclick="toggleSidebar()"
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-30 hidden lg:hidden transition-opacity duration-300">
+    </div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar"
+        class="w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col z-40 transition-transform duration-300 fixed inset-y-0 left-0 transform -translate-x-full lg:translate-x-0 lg:static">
+        <div class="p-6">
+            <div class="flex items-center gap-3 mb-10">
+                <div
+                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                    CN</div>
+                <div>
+                    <h1 class="font-bold text-lg dark:text-white">Councillor</h1>
+                    <p class="text-xs text-slate-500">Expert Panel</p>
+                </div>
+            </div>
+            <nav class="space-y-1">
+                <a href="#" onclick="navigateToPage('dashboard'); return false;"
+                    class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 font-medium">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5"></i> <span>Dashboard</span>
+                </a>
+                <a href="#" onclick="navigateToPage('appointments'); return false;"
+                    class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    <i data-lucide="calendar-clock" class="w-5 h-5"></i> <span>Appointments</span>
+                </a>
+                <a href="#" onclick="navigateToPage('availability'); return false;"
+                    class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    <i data-lucide="clock" class="w-5 h-5"></i> <span>Availability</span>
+                </a>
+                <a href="#" onclick="navigateToPage('profile'); return false;"
+                    class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    <i data-lucide="user" class="w-5 h-5"></i> <span>Profile</span>
+                </a>
+            </nav>
+        </div>
+        <div class="mt-auto p-6 border-t border-slate-100 dark:border-slate-800">
+            <a href="login.html?logout=true" onclick="localStorage.removeItem('currentUser'); localStorage.removeItem('userRole');" class="flex items-center gap-3 text-slate-500 hover:text-red-500 transition-colors">
+                <i data-lucide="log-out" class="w-5 h-5"></i> Sign Out
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <header
+            class="bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center gap-4">
+            <div class="flex items-center gap-4 flex-1">
+                <!-- Mobile Menu Button -->
+                <button onclick="toggleSidebar()"
+                    class="lg:hidden p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+                <h2 class="text-lg sm:text-xl font-bold truncate">Councillor Dashboard</h2>
+            </div>
+            <div class="flex items-center gap-2 sm:gap-4">
+                <span class="text-xs sm:text-sm font-medium text-green-600 bg-green-50 dark:bg-green-900/20 px-2 sm:px-3 py-1 rounded-full whitespace-nowrap">Available Now</span>
+                <button onclick="showNotifications()" class="relative p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 min-w-[44px] min-h-[44px] flex items-center justify-center">
+                    <i data-lucide="bell" class="w-5 h-5"></i>
+                    <span id="notification-badge" class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-slate-900" style="display: none;"></span>
+                </button>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+            <!-- Dashboard Page -->
+            <div id="page-dashboard" class="page-section">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
+                    <div>
+                        <h1 class="text-xl sm:text-2xl font-bold mb-1">Welcome, Dr. Smith!</h1>
+                        <p class="text-sm sm:text-base text-slate-500">You have <span id="upcoming-count">0</span> upcoming sessions today.</p>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div
+                        class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                        <div class="text-slate-500 text-sm font-medium mb-2">Rating</div>
+                        <div class="text-3xl font-bold flex items-center gap-2">4.8 <i data-lucide="star"
+                                class="w-5 h-5 text-yellow-400 fill-current"></i></div>
+                    </div>
+                    <div
+                        class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                        <div class="text-slate-500 text-sm font-medium mb-2">Sessions</div>
+                        <div class="text-3xl font-bold text-purple-600" id="total-sessions">0</div>
+                    </div>
+                    <div
+                        class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                        <div class="text-slate-500 text-sm font-medium mb-2">Reviews</div>
+                        <div class="text-3xl font-bold">89</div>
+                    </div>
+                    <div
+                        class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                        <div class="text-slate-500 text-sm font-medium mb-2">Earnings</div>
+                        <div class="text-3xl font-bold" id="total-earnings">₹0</div>
+                    </div>
+                </div>
+
+                <!-- Appointments List -->
+                <div
+                    class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 dark:border-slate-800">
+                        <h3 class="font-bold text-lg">Upcoming Appointments</h3>
+                    </div>
+                    <div class="divide-y divide-slate-100 dark:divide-slate-800" id="appointments-list">
+                        <!-- Appointments will be loaded here dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Appointments Page -->
+            <div id="page-appointments" class="page-section hidden">
+                <div class="mb-8">
+                    <h1 class="text-2xl font-bold mb-1">All Appointments</h1>
+                    <p class="text-slate-500">Manage all your scheduled sessions.</p>
+                </div>
+                <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 dark:border-slate-800">
+                        <div class="flex justify-between items-center">
+                            <h3 class="font-bold text-lg">Appointments</h3>
+                            <select id="appointment-filter" onchange="filterAppointments()" class="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm">
+                                <option value="all">All</option>
+                                <option value="pending">Pending</option>
+                                <option value="confirmed">Confirmed</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="divide-y divide-slate-100 dark:divide-slate-800" id="all-appointments-list">
+                        <!-- All appointments will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Availability Page -->
+            <div id="page-availability" class="page-section hidden">
+                <div class="mb-8">
+                    <h1 class="text-2xl font-bold mb-1">Set Availability</h1>
+                    <p class="text-slate-500">Manage your available time slots.</p>
+                </div>
+                <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-6">
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Available Days</label>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="toggleDay(this)" class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium">Mon</button>
+                            <button onclick="toggleDay(this)" class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium">Tue</button>
+                            <button onclick="toggleDay(this)" class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium">Wed</button>
+                            <button onclick="toggleDay(this)" class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium">Thu</button>
+                            <button onclick="toggleDay(this)" class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium">Fri</button>
+                            <button onclick="toggleDay(this)" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg text-sm font-medium">Sat</button>
+                            <button onclick="toggleDay(this)" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg text-sm font-medium">Sun</button>
+                        </div>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Time Slots</label>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            <button onclick="toggleTimeSlot(this)" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg text-sm font-medium">9:00 AM</button>
+                            <button onclick="toggleTimeSlot(this)" class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium">10:00 AM</button>
+                            <button onclick="toggleTimeSlot(this)" class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium">11:00 AM</button>
+                            <button onclick="toggleTimeSlot(this)" class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium">12:00 PM</button>
+                            <button onclick="toggleTimeSlot(this)" class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium">2:00 PM</button>
+                            <button onclick="toggleTimeSlot(this)" class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium">3:00 PM</button>
+                            <button onclick="toggleTimeSlot(this)" class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium">4:00 PM</button>
+                            <button onclick="toggleTimeSlot(this)" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg text-sm font-medium">5:00 PM</button>
+                        </div>
+                    </div>
+                    <button onclick="saveAvailability()" class="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl">Save Availability</button>
+                </div>
+            </div>
+
+            <!-- Profile Page -->
+            <div id="page-profile" class="page-section hidden">
+                <div class="mb-8">
+                    <h1 class="text-2xl font-bold mb-1">Profile Settings</h1>
+                    <p class="text-slate-500">Manage your profile information.</p>
+                </div>
+                <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-6">
+                    <div class="flex items-center gap-6 mb-8">
+                        <div class="w-24 h-24 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white font-bold text-3xl">DS</div>
+                        <div>
+                            <h3 class="text-xl font-bold">Dr. Sarah Smith</h3>
+                            <p class="text-slate-500">Career Coach</p>
+                            <button class="mt-2 text-sm text-primary-600 hover:underline">Change Photo</button>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Full Name</label>
+                            <input type="text" value="Dr. Sarah Smith" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Email</label>
+                            <input type="email" value="sarah.smith@example.com" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Specialization</label>
+                            <input type="text" value="Career Coach" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Bio</label>
+                            <textarea class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700" rows="4">Experienced career coach with 10+ years helping students achieve their goals.</textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Session Price (₹/hr)</label>
+                            <input type="number" value="500" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        </div>
+                        <button onclick="saveProfile()" class="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="shared-data.js"></script>
+    <script>
+        lucide.createIcons();
+        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+
+        // Load and display appointments
+        function loadAppointments() {
+            // Get current councillor ID (for demo, use ID 1)
+            const councillorId = 1; // In real app, get from logged-in user
+            const appointments = window.sharedData.getAppointments(councillorId);
+            
+            const appointmentsContainer = document.getElementById('appointments-list');
+            if (!appointmentsContainer) return;
+
+            // Clear existing appointments
+            appointmentsContainer.innerHTML = '';
+
+            // Update stats
+            document.getElementById('total-sessions').textContent = appointments.length;
+            document.getElementById('upcoming-count').textContent = appointments.filter(a => a.status === 'pending' || a.status === 'confirmed').length;
+            
+            const totalEarnings = appointments.filter(a => !a.free && a.status !== 'cancelled').reduce((sum, a) => sum + (a.price || 0), 0);
+            document.getElementById('total-earnings').textContent = `₹${totalEarnings}k`;
+
+            if (appointments.length === 0) {
+                appointmentsContainer.innerHTML = `
+                    <div class="p-6 text-center text-slate-500">
+                        <p>No appointments scheduled yet.</p>
+                    </div>
+                `;
+            } else {
+                // Sort appointments by date/time - show upcoming first
+                const sorted = [...appointments].sort((a, b) => {
+                    const dateA = a.date + ' ' + a.time;
+                    const dateB = b.date + ' ' + b.time;
+                    return dateA.localeCompare(dateB);
+                });
+
+                // Show only first 5 on dashboard
+                sorted.slice(0, 5).forEach(apt => {
+                    const initials = apt.studentName.split(' ').map(n => n[0]).join('').toUpperCase();
+                    const statusClass = apt.status === 'pending' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' : 
+                                       apt.status === 'confirmed' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 
+                                       'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400';
+                    
+                    appointmentsContainer.innerHTML += `
+                        <div class="p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center font-bold text-white">
+                                    ${initials}
+                                </div>
+                                <div>
+                                    <h4 class="font-bold">${apt.studentName}</h4>
+                                    <p class="text-sm text-slate-500">${apt.councillorRole || 'Career Guidance'} • ${apt.time}</p>
+                                    <p class="text-xs text-slate-400 mt-1">${apt.date} • ${apt.studentEmail}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="px-3 py-1 rounded-lg text-xs font-medium ${statusClass}">${apt.status}</span>
+                                <div class="flex gap-2">
+                                    <button onclick="rescheduleAppointment(${apt.id})"
+                                        class="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800">Reschedule</button>
+                                    <button onclick="confirmAppointment(${apt.id})"
+                                        class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700">Join Call</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            lucide.createIcons();
+        }
+
+        function rescheduleAppointment(appointmentId) {
+            showToast('Opening calendar to reschedule...', 'info');
+        }
+
+        function confirmAppointment(appointmentId) {
+            window.sharedData.updateAppointmentStatus(appointmentId, 'confirmed');
+            loadAppointments();
+            showToast('Joining Meeting Room...', 'success');
+        }
+
+        // Update appointments container reference
+        const appointmentsContainer = document.querySelector('#appointments-list');
+        if (appointmentsContainer) {
+            // Load appointments on page load
+            loadAppointments();
+
+            // Listen for data updates
+            window.addEventListener('dataUpdated', () => {
+                loadAppointments();
+            });
+        }
+
+        // Toast System
+        function showToast(message, type = 'info') {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.className = 'fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none';
+                document.body.appendChild(container);
+            }
+
+            const toast = document.createElement('div');
+            toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg transform transition-all duration-300 translate-y-10 opacity-0 ${type === 'success' ? 'bg-green-600 text-white' : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
+                }`;
+            toast.innerHTML = `
+                <i data-lucide="${type === 'success' ? 'check-circle' : 'info'}" class="w-5 h-5"></i>
+                <span class="font-medium text-sm">${message}</span>
+            `;
+
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            requestAnimationFrame(() => toast.classList.remove('translate-y-10', 'opacity-0'));
+            setTimeout(() => {
+                toast.classList.add('translate-y-10', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Mobile sidebar toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        // Navigation function
+        function navigateToPage(pageId) {
+            // Hide all pages
+            document.querySelectorAll('.page-section').forEach(page => {
+                page.classList.add('hidden');
+            });
+            
+            // Show selected page
+            const page = document.getElementById(`page-${pageId}`);
+            if (page) {
+                page.classList.remove('hidden');
+            }
+
+            // Update sidebar active state
+            document.querySelectorAll('.nav-link').forEach(l => {
+                l.classList.remove('bg-purple-50', 'dark:bg-purple-900/20', 'text-purple-600', 'dark:text-purple-400', 'font-medium');
+                l.classList.add('text-slate-500', 'dark:text-slate-400', 'hover:bg-slate-100', 'dark:hover:bg-slate-800');
+            });
+
+            // Close sidebar on mobile after navigation
+            if (window.innerWidth < 1024) {
+                toggleSidebar();
+            }
+
+            // Load page-specific data
+            if (pageId === 'appointments') {
+                loadAllAppointments();
+            }
+        }
+
+        // Sidebar Navigation
+        document.querySelectorAll('aside nav a').forEach((link, index) => {
+            link.onclick = (e) => {
+                e.preventDefault();
+                const pages = ['dashboard', 'appointments', 'availability', 'profile'];
+                navigateToPage(pages[index]);
+                
+                // Update all links
+                document.querySelectorAll('aside nav a').forEach(l => {
+                    l.classList.remove('bg-purple-50', 'dark:bg-purple-900/20', 'text-purple-600', 'dark:text-purple-400', 'font-medium');
+                    l.classList.add('text-slate-500', 'dark:text-slate-400', 'hover:bg-slate-100', 'dark:hover:bg-slate-800');
+                });
+                
+                // Update active link
+                link.classList.remove('text-slate-500', 'dark:text-slate-400', 'hover:bg-slate-100', 'dark:hover:bg-slate-800');
+                link.classList.add('bg-purple-50', 'dark:bg-purple-900/20', 'text-purple-600', 'dark:text-purple-400', 'font-medium');
+            };
+        });
+
+        // Load all appointments for appointments page
+        function loadAllAppointments() {
+            const councillorId = 1;
+            const allAppointments = window.sharedData.getAppointments(councillorId);
+            const filter = document.getElementById('appointment-filter')?.value || 'all';
+            
+            let filtered = allAppointments;
+            if (filter !== 'all') {
+                filtered = allAppointments.filter(apt => apt.status === filter);
+            }
+
+            const container = document.getElementById('all-appointments-list');
+            if (!container) return;
+
+            container.innerHTML = '';
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="p-6 text-center text-slate-500">No appointments found.</div>';
+            } else {
+                filtered.forEach(apt => {
+                    const initials = apt.studentName.split(' ').map(n => n[0]).join('').toUpperCase();
+                    const statusClass = apt.status === 'pending' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' : 
+                                       apt.status === 'confirmed' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 
+                                       'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400';
+                    
+                    container.innerHTML += `
+                        <div class="p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center font-bold text-white">
+                                    ${initials}
+                                </div>
+                                <div>
+                                    <h4 class="font-bold">${apt.studentName}</h4>
+                                    <p class="text-sm text-slate-500">${apt.councillorRole || 'Career Guidance'} • ${apt.time}</p>
+                                    <p class="text-xs text-slate-400 mt-1">${apt.date} • ${apt.studentEmail}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="px-3 py-1 rounded-lg text-xs font-medium ${statusClass}">${apt.status}</span>
+                                <div class="flex gap-2">
+                                    <button onclick="rescheduleAppointment(${apt.id})"
+                                        class="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800">Reschedule</button>
+                                    <button onclick="confirmAppointment(${apt.id})"
+                                        class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700">Join Call</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            lucide.createIcons();
+        }
+
+        function filterAppointments() {
+            loadAllAppointments();
+        }
+
+        function toggleDay(btn) {
+            if (btn.classList.contains('bg-primary-600')) {
+                btn.classList.remove('bg-primary-600', 'text-white');
+                btn.classList.add('bg-slate-100', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-400');
+            } else {
+                btn.classList.remove('bg-slate-100', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-400');
+                btn.classList.add('bg-primary-600', 'text-white');
+            }
+        }
+
+        function toggleTimeSlot(btn) {
+            if (btn.classList.contains('bg-primary-600')) {
+                btn.classList.remove('bg-primary-600', 'text-white');
+                btn.classList.add('bg-slate-100', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-400');
+            } else {
+                btn.classList.remove('bg-slate-100', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-400');
+                btn.classList.add('bg-primary-600', 'text-white');
+            }
+        }
+
+        function saveAvailability() {
+            showToast('Availability saved successfully!', 'success');
+        }
+
+        function saveProfile() {
+            showToast('Profile updated successfully!', 'success');
+        }
+
+        // Action Buttons
+        document.querySelectorAll('button').forEach(btn => {
+            if (btn.innerText === 'Reschedule') {
+                btn.onclick = () => showToast('Opening Calendar...');
+            } else if (btn.innerText === 'Join Call') {
+                btn.onclick = () => showToast('Joining Meeting Room...', 'success');
+            }
+        });
+
+        // Notifications
+        function showNotifications() {
+            const notifications = window.sharedData.getNotifications(`councillor_1`);
+            if (notifications.length === 0) {
+                showToast('No new notifications', 'info');
+                return;
+            }
+            window.sharedData.markAllNotificationsRead(`councillor_1`);
+            document.getElementById('notification-badge').style.display = 'none';
+            showToast(`You have ${notifications.length} notifications`, 'info');
+        }
+
+        // Update notification badge
+        function updateNotificationBadge() {
+            const notifications = window.sharedData.getNotifications(`councillor_1`);
+            const unreadCount = notifications.filter(n => !n.read).length;
+            const badge = document.getElementById('notification-badge');
+            if (badge) {
+                badge.style.display = unreadCount > 0 ? 'block' : 'none';
+            }
+        }
+
+        updateNotificationBadge();
+        window.addEventListener('dataUpdated', updateNotificationBadge);
+    </script>
+</body>
+
+</html>

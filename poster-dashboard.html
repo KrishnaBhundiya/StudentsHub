@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Job Poster Dashboard - Student Career Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        primary: { 50: '#eef2ff', 100: '#e0e7ff', 500: '#6366f1', 600: '#4f46e5', 900: '#312e81' },
+                        slate: { 850: '#151e2e', 950: '#020617' }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .page-section {
+            display: block;
+        }
+        .page-section.hidden {
+            display: none;
+        }
+        
+        /* Mobile responsive adjustments */
+        @media (max-width: 1023px) {
+            body {
+                overflow-x: hidden;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 h-screen flex overflow-hidden">
+
+    <!-- Authentication Check - Redirect to login if not logged in or wrong role -->
+    <script>
+        (function() {
+            const currentUser = localStorage.getItem('currentUser');
+            const userRole = localStorage.getItem('userRole');
+            
+            if (!currentUser || !userRole) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            const user = JSON.parse(currentUser);
+            if (user.role !== 'poster') {
+                // Redirect to appropriate dashboard based on role
+                if (user.role === 'councillor') {
+                    window.location.href = 'councillor-dashboard.html';
+                } else if (user.role === 'hoster') {
+                    window.location.href = 'hoster-dashboard.html';
+                } else {
+                    window.location.href = 'index.html';
+                }
+            }
+        })();
+    </script>
+
+    <!-- Mobile Overlay -->
+    <div id="mobile-overlay" onclick="toggleSidebar()"
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-30 hidden lg:hidden transition-opacity duration-300">
+    </div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar"
+        class="w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col z-40 transition-transform duration-300 fixed inset-y-0 left-0 transform -translate-x-full lg:translate-x-0 lg:static">
+        <div class="p-6">
+            <div class="flex items-center gap-3 mb-10">
+                <div
+                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                    JP</div>
+                <div>
+                    <h1 class="font-bold text-lg dark:text-white">Job Poster</h1>
+                    <p class="text-xs text-slate-500">Recruitment Portal</p>
+                </div>
+            </div>
+            <nav class="space-y-1">
+                <a href="#" onclick="navigateToPage('dashboard'); return false;"
+                    class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 font-medium">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5"></i> <span>Dashboard</span>
+                </a>
+                <a href="#" onclick="navigateToPage('jobs'); return false;"
+                    class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    <i data-lucide="briefcase" class="w-5 h-5"></i> <span>Active Jobs</span>
+                </a>
+                <a href="#" onclick="navigateToPage('applicants'); return false;"
+                    class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    <i data-lucide="users" class="w-5 h-5"></i> <span>Applicants</span>
+                </a>
+            </nav>
+        </div>
+        <div class="mt-auto p-6 border-t border-slate-100 dark:border-slate-800">
+            <a href="login.html?logout=true" onclick="localStorage.removeItem('currentUser'); localStorage.removeItem('userRole');" class="flex items-center gap-3 text-slate-500 hover:text-red-500 transition-colors">
+                <i data-lucide="log-out" class="w-5 h-5"></i> Sign Out
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <header
+            class="bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center gap-4">
+            <div class="flex items-center gap-4 flex-1">
+                <!-- Mobile Menu Button -->
+                <button onclick="toggleSidebar()"
+                    class="lg:hidden p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+                <h2 class="text-lg sm:text-xl font-bold truncate">Recruiter Dashboard</h2>
+            </div>
+            <button onclick="showNotifications()" class="relative p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 min-w-[44px] min-h-[44px] flex items-center justify-center">
+                <i data-lucide="bell" class="w-5 h-5"></i>
+                <span id="notification-badge" class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-slate-900" style="display: none;"></span>
+            </button>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+            <!-- Dashboard Page -->
+            <div id="page-dashboard" class="page-section">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-bold mb-1">Hello, Recruiter!</h1>
+                    <p class="text-sm sm:text-base text-slate-500">Manage your job postings and applicants.</p>
+                </div>
+                    <button onclick="showCreateJobModal()"
+                    class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 flex items-center gap-2 min-h-[44px]">
+                    <i data-lucide="plus" class="w-5 h-5"></i> <span>Post New Job</span>
+                </button>
+            </div>
+
+            <!-- Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div
+                    class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                    <div class="text-slate-500 text-sm font-medium mb-2">Active Jobs</div>
+                        <div class="text-3xl font-bold text-emerald-600" id="active-jobs">0</div>
+                </div>
+                <div
+                    class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                    <div class="text-slate-500 text-sm font-medium mb-2">Total Applicants</div>
+                        <div class="text-3xl font-bold" id="total-applicants">0</div>
+                </div>
+                <div
+                    class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                    <div class="text-slate-500 text-sm font-medium mb-2">Interviews Scheduled</div>
+                        <div class="text-3xl font-bold" id="interviews-scheduled">0</div>
+                </div>
+            </div>
+
+            <!-- Jobs List -->
+            <h3 class="font-bold text-lg mb-4">Active Postings</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="jobs-list">
+                    <!-- Jobs will be loaded here dynamically -->
+                </div>
+            </div>
+
+            <!-- Active Jobs Page -->
+            <div id="page-jobs" class="page-section hidden">
+                <div class="flex justify-between items-center mb-8">
+                        <div>
+                        <h1 class="text-2xl font-bold mb-1">Active Jobs</h1>
+                        <p class="text-slate-500">Manage all your job postings.</p>
+                        </div>
+                    <button onclick="showCreateJobModal()"
+                        class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 flex items-center gap-2">
+                        <i data-lucide="plus" class="w-5 h-5"></i> Post New Job
+                    </button>
+                    </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="all-jobs-list">
+                    <!-- All jobs will be loaded here -->
+                    </div>
+                </div>
+
+            <!-- Applicants Page -->
+            <div id="page-applicants" class="page-section hidden">
+                <div class="mb-8">
+                    <h1 class="text-2xl font-bold mb-1">All Applicants</h1>
+                    <p class="text-slate-500">View and manage job applications.</p>
+                </div>
+                <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 dark:border-slate-800">
+                        <div class="flex justify-between items-center">
+                            <h3 class="font-bold text-lg">Applicants</h3>
+                            <select id="job-select" onchange="loadApplicants()" class="px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg">
+                                <option value="">All Jobs</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="divide-y divide-slate-100 dark:divide-slate-800" id="applicants-list">
+                        <!-- Applicants will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="shared-data.js"></script>
+    <script>
+        lucide.createIcons();
+        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+
+        // Load jobs and applications
+        function loadJobs() {
+            const posterId = 1; // In real app, get from logged-in user
+            const jobs = window.sharedData.getJobsByPoster(posterId);
+            const allApplications = window.sharedData.getJobApplications();
+            const internships = window.sharedData.get().internships;
+            
+            // Combine jobs and internships for display
+            const allJobs = [...jobs, ...internships];
+            
+            const jobsContainer = document.getElementById('jobs-list');
+            if (!jobsContainer) return;
+
+            // Clear existing jobs
+            jobsContainer.innerHTML = '';
+
+            if (allJobs.length === 0) {
+                jobsContainer.innerHTML = '<p class="text-slate-500 text-center py-8 col-span-2">No jobs posted yet.</p>';
+            } else {
+                allJobs.forEach(job => {
+                    const jobId = job.id;
+                    const applications = allApplications.filter(app => app.jobId === jobId);
+                    const applicationCount = applications.length;
+                    
+                    jobsContainer.innerHTML += `
+                        <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <h4 class="font-bold text-lg">${job.role || job.title}</h4>
+                                    <p class="text-slate-500 text-sm">${job.loc || 'Location TBD'} • ${job.stipend || 'Salary TBD'}</p>
+                                </div>
+                                <span class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-xs font-bold">Active</span>
+                            </div>
+                            <div class="flex items-center justify-between mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                                <div class="text-sm font-medium text-slate-600 dark:text-slate-400">${applicationCount} Applicants</div>
+                                <button onclick="viewJobDetails(${jobId})" class="text-emerald-600 font-bold text-sm hover:underline">View Details</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            lucide.createIcons();
+        }
+
+        function viewJobDetails(jobId) {
+            const applications = window.sharedData.getJobApplications(jobId);
+            const job = window.sharedData.get().internships.find(j => j.id === jobId) || 
+                       window.sharedData.get().jobs.find(j => j.id === jobId);
+            
+            if (job) {
+                let message = `Job: ${job.role || job.title}\n\nApplicants (${applications.length}):\n`;
+                applications.forEach((app, idx) => {
+                    message += `${idx + 1}. ${app.studentName} (${app.studentEmail}) - ${app.status}\n`;
+                });
+                alert(message);
+            }
+        }
+
+        // Update stats
+        function updateStats() {
+            const posterId = 1;
+            const jobs = window.sharedData.getJobsByPoster(posterId);
+            const internships = window.sharedData.get().internships;
+            const allJobs = [...jobs, ...internships];
+            const allApplications = window.sharedData.getJobApplications();
+
+            // Update stat cards
+            document.getElementById('active-jobs').textContent = allJobs.length;
+            document.getElementById('total-applicants').textContent = allApplications.length;
+            document.getElementById('interviews-scheduled').textContent = allApplications.filter(app => app.status === 'interview').length;
+        }
+
+        // Load on page load
+        loadJobs();
+        updateStats();
+
+        // Listen for updates
+        window.addEventListener('dataUpdated', () => {
+            loadJobs();
+            updateStats();
+        });
+
+        // Toast System
+        function showToast(message, type = 'info') {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.className = 'fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none';
+                document.body.appendChild(container);
+            }
+
+            const toast = document.createElement('div');
+            toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg transform transition-all duration-300 translate-y-10 opacity-0 ${type === 'success' ? 'bg-green-600 text-white' : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
+                }`;
+            toast.innerHTML = `
+                <i data-lucide="${type === 'success' ? 'check-circle' : 'info'}" class="w-5 h-5"></i>
+                <span class="font-medium text-sm">${message}</span>
+            `;
+
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            requestAnimationFrame(() => toast.classList.remove('translate-y-10', 'opacity-0'));
+            setTimeout(() => {
+                toast.classList.add('translate-y-10', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Button handlers are now in showCreateJobModal function
+
+        // Mobile sidebar toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        // Navigation function
+        function navigateToPage(pageId) {
+            document.querySelectorAll('.page-section').forEach(page => {
+                page.classList.add('hidden');
+            });
+            
+            const page = document.getElementById(`page-${pageId}`);
+            if (page) {
+                page.classList.remove('hidden');
+            }
+
+            // Update sidebar active state
+            document.querySelectorAll('.nav-link').forEach(l => {
+                l.classList.remove('bg-emerald-50', 'dark:bg-emerald-900/20', 'text-emerald-600', 'dark:text-emerald-400', 'font-medium');
+                l.classList.add('text-slate-500', 'dark:text-slate-400', 'hover:bg-slate-100', 'dark:hover:bg-slate-800');
+            });
+
+            // Close sidebar on mobile after navigation
+            if (window.innerWidth < 1024) {
+                toggleSidebar();
+            }
+
+            if (pageId === 'jobs') {
+                loadAllJobs();
+            } else if (pageId === 'applicants') {
+                loadJobSelect();
+                loadApplicants();
+            }
+        }
+
+        // Sidebar Navigation
+        document.querySelectorAll('aside nav a').forEach((link, index) => {
+            link.onclick = (e) => {
+                e.preventDefault();
+                const pages = ['dashboard', 'jobs', 'applicants'];
+                navigateToPage(pages[index]);
+                
+                // Update all links
+                document.querySelectorAll('aside nav a').forEach(l => {
+                    l.classList.remove('bg-emerald-50', 'dark:bg-emerald-900/20', 'text-emerald-600', 'dark:text-emerald-400', 'font-medium');
+                    l.classList.add('text-slate-500', 'dark:text-slate-400', 'hover:bg-slate-100', 'dark:hover:bg-slate-800');
+                });
+                
+                // Update active link
+                link.classList.remove('text-slate-500', 'dark:text-slate-400', 'hover:bg-slate-100', 'dark:hover:bg-slate-800');
+                link.classList.add('bg-emerald-50', 'dark:bg-emerald-900/20', 'text-emerald-600', 'dark:text-emerald-400', 'font-medium');
+            };
+        });
+
+        function loadAllJobs() {
+            const posterId = 1;
+            const jobs = window.sharedData.getJobsByPoster(posterId);
+            const internships = window.sharedData.get().internships;
+            const allJobs = [...jobs, ...internships];
+            const allApplications = window.sharedData.getJobApplications();
+            
+            const container = document.getElementById('all-jobs-list');
+            if (!container) return;
+
+            container.innerHTML = '';
+
+            if (allJobs.length === 0) {
+                container.innerHTML = '<p class="text-slate-500 text-center py-8 col-span-2">No jobs posted yet.</p>';
+            } else {
+                allJobs.forEach(job => {
+                    const jobId = job.id;
+                    const applications = allApplications.filter(app => app.jobId === jobId);
+                    
+                    container.innerHTML += `
+                        <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <h4 class="font-bold text-lg">${job.role || job.title}</h4>
+                                    <p class="text-slate-500 text-sm">${job.loc || 'Location TBD'} • ${job.stipend || 'Salary TBD'}</p>
+                                    <p class="text-xs text-slate-400 mt-1">${applications.length} applicants</p>
+                                </div>
+                                <span class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-xs font-bold">Active</span>
+                            </div>
+                            <div class="flex items-center justify-between mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                                <button onclick="editJob(${jobId})" class="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800">Edit</button>
+                                <button onclick="viewJobDetails(${jobId})" class="text-emerald-600 font-bold text-sm hover:underline">View Details</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            lucide.createIcons();
+        }
+
+        function loadJobSelect() {
+            const posterId = 1;
+            const jobs = window.sharedData.getJobsByPoster(posterId);
+            const internships = window.sharedData.get().internships;
+            const allJobs = [...jobs, ...internships];
+            const select = document.getElementById('job-select');
+            
+            if (!select) return;
+
+            select.innerHTML = '<option value="">All Jobs</option>';
+            allJobs.forEach(job => {
+                const option = document.createElement('option');
+                option.value = job.id;
+                option.textContent = `${job.role || job.title} - ${job.company || 'Company'}`;
+                select.appendChild(option);
+            });
+        }
+
+        function loadApplicants() {
+            const jobId = parseInt(document.getElementById('job-select')?.value || '0');
+            const allApplications = window.sharedData.getJobApplications();
+            
+            let filtered = allApplications;
+            if (jobId) {
+                filtered = allApplications.filter(app => app.jobId === jobId);
+            }
+
+            const container = document.getElementById('applicants-list');
+            if (!container) return;
+
+            container.innerHTML = '';
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="p-6 text-center text-slate-500">No applicants found.</div>';
+            } else {
+                filtered.forEach((app, idx) => {
+                    const initials = app.studentName.split(' ').map(n => n[0]).join('').toUpperCase();
+                    const statusClass = app.status === 'pending' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' : 
+                                       app.status === 'interview' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 
+                                       app.status === 'accepted' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 
+                                       'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400';
+                    
+                    container.innerHTML += `
+                        <div class="p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center font-bold text-white">
+                                    ${initials}
+                                </div>
+                                <div>
+                                    <h4 class="font-bold">${app.studentName}</h4>
+                                    <p class="text-sm text-slate-500">${app.studentEmail}</p>
+                                    <p class="text-xs text-slate-400 mt-1">Applied on ${new Date(app.appliedAt).toLocaleDateString()}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="px-3 py-1 rounded-lg text-xs font-medium ${statusClass}">${app.status}</span>
+                                <div class="flex gap-2">
+                                    <button onclick="updateApplicationStatus(${app.id}, 'interview')" class="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800">Schedule Interview</button>
+                                    <button onclick="viewApplication(${app.id})" class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700">View</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            lucide.createIcons();
+        }
+
+        function editJob(jobId) {
+            showToast('Opening job editor...', 'info');
+        }
+
+        function updateApplicationStatus(appId, status) {
+            const data = window.sharedData.get();
+            const app = data.jobApplications.find(a => a.id === appId);
+            if (app) {
+                app.status = status;
+                window.sharedData.save(data);
+                loadApplicants();
+                updateStats();
+                showToast('Application status updated!', 'success');
+            }
+        }
+
+        function viewApplication(appId) {
+            const data = window.sharedData.get();
+            const app = data.jobApplications.find(a => a.id === appId);
+            if (app) {
+                alert(`Application Details:\n\nName: ${app.studentName}\nEmail: ${app.studentEmail}\nStatus: ${app.status}\nApplied: ${new Date(app.appliedAt).toLocaleString()}`);
+            }
+        }
+
+        function showCreateJobModal() {
+            const role = prompt('Enter job title:');
+            if (role) {
+                const company = prompt('Enter company name:') || 'Company';
+                const loc = prompt('Enter location:') || 'Remote';
+                const stipend = prompt('Enter stipend/salary:') || '₹20k/mo';
+                
+                const job = window.sharedData.createJob({
+                    role: role,
+                    company: company,
+                    loc: loc,
+                    stipend: stipend,
+                    dur: '3m',
+                    tags: [],
+                    type: 'internship',
+                    posterId: 1
+                });
+                showToast('Job Posted Successfully!', 'success');
+                loadJobs();
+                updateStats();
+                if (!document.getElementById('page-dashboard').classList.contains('hidden')) {
+                    loadAllJobs();
+                }
+            }
+        }
+
+        // View Details buttons are handled in viewJobDetails function
+
+        // Notifications
+        function showNotifications() {
+            const notifications = window.sharedData.getNotifications(`poster_1`);
+            if (notifications.length === 0) {
+                showToast('No new notifications', 'info');
+                return;
+            }
+            window.sharedData.markAllNotificationsRead(`poster_1`);
+            document.getElementById('notification-badge').style.display = 'none';
+            showToast(`You have ${notifications.length} notifications`, 'info');
+        }
+
+        function updateNotificationBadge() {
+            const notifications = window.sharedData.getNotifications(`poster_1`);
+            const unreadCount = notifications.filter(n => !n.read).length;
+            const badge = document.getElementById('notification-badge');
+            if (badge) {
+                badge.style.display = unreadCount > 0 ? 'block' : 'none';
+            }
+        }
+
+        updateNotificationBadge();
+        window.addEventListener('dataUpdated', updateNotificationBadge);
+    </script>
+</body>
+
+</html>

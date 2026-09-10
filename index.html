@@ -1,0 +1,1887 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student Career Hub</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        primary: {
+                            50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe', 300: '#a5b4fc',
+                            400: '#818cf8', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca',
+                            800: '#3730a3', 900: '#312e81',
+                        },
+                        slate: {
+                            850: '#151e2e', // Custom dark shade
+                            950: '#020617',
+                        }
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+                        'card': '0 0 0 1px rgba(0,0,0,0.03), 0 2px 8px rgba(0,0,0,0.04)',
+                        'glow': '0 0 20px rgba(99, 102, 241, 0.5)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- GenAI Import Map -->
+    <script type="importmap">
+    {
+      "imports": {
+        "@google/genai": "https://esm.run/@google/genai"
+      }
+    }
+    </script>
+
+    <style>
+        body {
+            /* Smooth background transition for dark mode */
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .page-section {
+            display: none;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .page-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Loader */
+        .typing-dot {
+            animation: typing 1.4s infinite ease-in-out both;
+        }
+
+        .typing-dot:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+
+        @keyframes typing {
+
+            0%,
+            80%,
+            100% {
+                transform: scale(0);
+            }
+
+            40% {
+                transform: scale(1);
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="/index.css">
+</head>
+
+<body
+    class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 h-screen overflow-hidden flex transition-colors duration-300">
+
+    <!-- Authentication Check - Redirect to login if not logged in -->
+    <script>
+        (function() {
+            // Check if user is logged in
+            const currentUser = localStorage.getItem('currentUser');
+            const userRole = localStorage.getItem('userRole');
+            
+            if (!currentUser || !userRole) {
+                // Not logged in - redirect to login
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            // Check if user is on the correct dashboard for their role
+            const user = JSON.parse(currentUser);
+            if (user.role === 'hoster') {
+                window.location.href = 'hoster-dashboard.html';
+            } else if (user.role === 'poster') {
+                window.location.href = 'poster-dashboard.html';
+            } else if (user.role === 'councillor') {
+                window.location.href = 'councillor-dashboard.html';
+            }
+            // If role is 'student' or anything else, stay on index.html
+        })();
+    </script>
+
+    <!-- Mobile Overlay -->
+    <div id="mobile-overlay" onclick="app.toggleSidebar()"
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-30 hidden lg:hidden transition-opacity duration-300">
+    </div>
+
+    <!-- Sidebar -->
+    <!-- Changed classes: 
+         - Removed 'hidden lg:flex' 
+         - Added 'fixed inset-y-0 left-0 z-40 transform -translate-x-full lg:translate-x-0 lg:static flex' 
+         This makes it sliding on mobile and static on desktop.
+    -->
+    <aside id="sidebar"
+        class="w-72 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-r border-slate-200 dark:border-slate-800 flex flex-col z-40 transition-transform duration-300 fixed inset-y-0 left-0 transform -translate-x-full lg:translate-x-0 lg:static">
+        <div class="p-6">
+            <div class="flex items-center gap-3 mb-10">
+                <div
+                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-600 to-primary-800 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-primary-500/30">
+                    SH</div>
+                <div>
+                    <h1 class="font-bold text-lg tracking-tight dark:text-white">Student Hub</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Career & Campus</p>
+                </div>
+            </div>
+
+            <nav class="space-y-1" id="sidebar-nav">
+                <!-- Nav items injected by JS -->
+            </nav>
+        </div>
+
+        <div class="mt-auto p-6 border-t border-slate-100 dark:border-slate-800">
+            <div
+                class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 transition-colors">
+                <div
+                    class="w-8 h-8 rounded-full bg-gradient-to-r from-sky-400 to-primary-500 flex items-center justify-center text-white text-xs font-bold">
+                    SJ</div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold truncate dark:text-slate-200">Sarah Jenkins</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 truncate">student@demo.edu</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-w-0 relative transition-colors duration-300">
+        <!-- Header -->
+        <header
+            class="sticky top-0 z-10 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-6 py-4 flex items-center justify-between gap-4 transition-colors duration-300">
+            <div class="flex items-center gap-4 flex-1">
+                <!-- Mobile Menu Button -->
+                <button onclick="app.toggleSidebar()"
+                    class="lg:hidden p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+                <div class="relative max-w-md w-full hidden md:block">
+                    <i data-lucide="search"
+                        class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 w-4 h-4"></i>
+                    <input type="text" id="global-search" placeholder="Search internships, events..."
+                        oninput="app.handleSearch(this.value)" onkeydown="if(event.key==='Enter') app.performSearch()"
+                        class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-100 dark:focus:ring-primary-900 focus:border-primary-400 transition-all placeholder-slate-400">
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <!-- Theme Toggle -->
+                <button onclick="app.toggleTheme()"
+                    class="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+                    aria-label="Toggle Dark Mode">
+                    <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
+                    <i data-lucide="moon" class="w-5 h-5 block dark:hidden"></i>
+                </button>
+
+                <button onclick="app.showNotifications()"
+                    class="relative p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors group">
+                    <i data-lucide="bell" class="w-5 h-5"></i>
+                    <span id="notification-badge"
+                        class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-slate-900" style="display: none;"></span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Scrollable Page Area -->
+        <div class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scroll-smooth" id="main-container">
+
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="page-section active max-w-6xl mx-auto space-y-8">
+                <div class="flex justify-between items-end">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Welcome back, Sarah! 👋</h2>
+                        <p class="text-slate-500 dark:text-slate-400 mt-1">Here's what's happening in your campus life
+                            today.</p>
+                    </div>
+                    <span
+                        class="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-xs font-medium text-slate-600 dark:text-slate-300 hidden sm:inline-block">Today</span>
+                </div>
+
+                <!-- Quick Stats Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Cards injected by JS -->
+                    <div onclick="app.navigate('internships')"
+                        class="cursor-pointer bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-card hover:shadow-lg hover:-translate-y-1 transition-all group">
+                        <div
+                            class="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <i data-lucide="briefcase"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white">Internships</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">Track applications & find roles.</p>
+                        <div class="flex items-center text-sm font-semibold text-blue-600 dark:text-blue-400 gap-1">Open
+                            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+
+                    <div onclick="app.navigate('scholarships')"
+                        class="cursor-pointer bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-card hover:shadow-lg hover:-translate-y-1 transition-all group">
+                        <div
+                            class="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <i data-lucide="graduation-cap"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white">Scholarships</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">Funding & financial aid.</p>
+                        <div class="flex items-center text-sm font-semibold text-purple-600 dark:text-purple-400 gap-1">
+                            Open <i data-lucide="arrow-right" class="w-4 h-4"></i></div>
+                    </div>
+
+                    <div onclick="app.navigate('events')"
+                        class="cursor-pointer bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-card hover:shadow-lg hover:-translate-y-1 transition-all group">
+                        <div
+                            class="w-12 h-12 rounded-xl bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <i data-lucide="calendar"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white">Events</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">Workshops & seminars.</p>
+                        <div class="flex items-center text-sm font-semibold text-orange-600 dark:text-orange-400 gap-1">
+                            Open <i data-lucide="arrow-right" class="w-4 h-4"></i></div>
+                    </div>
+
+                    <div onclick="app.navigate('councilling')"
+                        class="cursor-pointer bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-card hover:shadow-lg hover:-translate-y-1 transition-all group">
+                        <div
+                            class="w-12 h-12 rounded-xl bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <i data-lucide="users"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white">Councilling</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">Expert guidance & mentorship.</p>
+                        <div class="flex items-center text-sm font-semibold text-pink-600 dark:text-pink-400 gap-1">Open
+                            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notifications & AI Insight -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div
+                        class="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-card p-6 transition-colors">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-lg text-slate-900 dark:text-white">Recent Activity</h3>
+                            <button onclick="app.markAllNotificationsRead()"
+                                class="text-sm text-primary-600 dark:text-primary-400 hover:underline">Mark all
+                                read</button>
+                        </div>
+                        <div id="notifications-list" class="space-y-4"></div>
+                    </div>
+
+                    <div
+                        class="bg-gradient-to-br from-indigo-900 to-primary-900 rounded-2xl shadow-xl shadow-indigo-900/20 p-6 text-white flex flex-col justify-between">
+                        <div>
+                            <div
+                                class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-xs font-medium mb-4">
+                                <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+                                AI Insights
+                            </div>
+                            <h3 class="text-xl font-bold mb-2">Job Market Trend</h3>
+                            <p class="text-indigo-200 text-sm leading-relaxed">Based on your skills, Frontend roles have
+                                increased by 15% this month.</p>
+                        </div>
+                        <button onclick="app.navigate('ai-jobs')"
+                            class="w-full mt-6 py-3 bg-white text-primary-900 font-bold rounded-xl hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2">
+                            Explore Jobs <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Internships Section -->
+            <section id="internships" class="page-section max-w-6xl mx-auto space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Internships</h2>
+                        <p class="text-slate-500 dark:text-slate-400">Curated opportunities for your profile.</p>
+                    </div>
+                    <div class="flex gap-2 w-full sm:w-auto">
+                        <div class="relative flex-1 sm:flex-initial">
+                            <i data-lucide="search"
+                                class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
+                            <input type="text" placeholder="Filter roles..." oninput="app.filterInternships()"
+                                class="w-full sm:w-64 pl-9 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+                        </div>
+                        <select onchange="app.filterInternshipsByTag(this.value)" class="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 text-sm">
+                            <option value="">All Tags</option>
+                            <option value="React">React</option>
+                            <option value="Python">Python</option>
+                            <option value="Figma">Figma</option>
+                            <option value="Node">Node</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="internships-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            </section>
+
+            <!-- Scholarships Section -->
+            <section id="scholarships" class="page-section max-w-6xl mx-auto space-y-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Scholarships</h2>
+                    <p class="text-slate-500 dark:text-slate-400">Financial aid opportunities.</p>
+                </div>
+                <div id="scholarships-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6"></div>
+            </section>
+
+            <!-- Events Section -->
+            <section id="events" class="page-section max-w-6xl mx-auto space-y-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Campus Events</h2>
+                    <p class="text-slate-500 dark:text-slate-400">Upcoming workshops and seminars.</p>
+                </div>
+                <div id="events-list" class="space-y-4"></div>
+            </section>
+
+            <!-- Councilling Section -->
+            <section id="councilling" class="page-section max-w-6xl mx-auto space-y-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Career Councilling</h2>
+                        <p class="text-slate-500 dark:text-slate-400">Connect with experts for guidance.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-3 w-full md:w-auto">
+                        <div class="relative flex-1 md:flex-initial">
+                            <i data-lucide="search"
+                                class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
+                            <input type="text" id="councillor-search" oninput="app.filterCouncillors()"
+                                placeholder="Find councillors..."
+                                class="w-full md:w-64 pl-9 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+                        </div>
+                        <select id="councillor-sort" onchange="app.filterCouncillors()"
+                            class="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            <option value="all">Sort by</option>
+                            <option value="price-low">Price: Low to High</option>
+                            <option value="price-high">Price: High to Low</option>
+                            <option value="free">Free Only</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="councillors-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </section>
+
+            <!-- AI Jobs Section -->
+            <section id="ai-jobs" class="page-section max-w-6xl mx-auto space-y-6">
+                <div
+                    class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 text-white shadow-xl shadow-indigo-500/20 flex items-center gap-4">
+                    <div class="p-3 bg-white/20 backdrop-blur-sm rounded-xl"><i data-lucide="sparkles"
+                            class="w-6 h-6 text-yellow-300"></i></div>
+                    <div>
+                        <h2 class="text-2xl font-bold">AI Job Intelligence</h2>
+                        <p class="text-indigo-100">Jobs ranked by your compatibility score.</p>
+                    </div>
+                </div>
+                <div id="ai-jobs-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </section>
+
+            <!-- Profile Section -->
+            <section id="profile" class="page-section max-w-6xl mx-auto space-y-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900 dark:text-white">My Profile</h2>
+                    <p class="text-slate-500 dark:text-slate-400">Manage your applications and activities.</p>
+                </div>
+
+                <!-- Profile Tabs -->
+                <div class="flex gap-2 border-b border-slate-200 dark:border-slate-800">
+                    <button onclick="app.showProfileTab('overview')" class="profile-tab px-4 py-2 font-medium text-sm border-b-2 border-primary-600 text-primary-600">Overview</button>
+                    <button onclick="app.showProfileTab('applications')" class="profile-tab px-4 py-2 font-medium text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">My Applications</button>
+                    <button onclick="app.showProfileTab('appointments')" class="profile-tab px-4 py-2 font-medium text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">My Appointments</button>
+                    <button onclick="app.showProfileTab('events')" class="profile-tab px-4 py-2 font-medium text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">My Events</button>
+                </div>
+
+                <!-- Overview Tab -->
+                <div id="profile-overview" class="profile-tab-content">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800">
+                            <h3 class="font-bold text-lg mb-4">Profile Information</h3>
+                            <div id="profile-info" class="space-y-3">
+                                <!-- Loaded dynamically -->
+                            </div>
+                            <button onclick="app.editProfile()" class="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700">Edit Profile</button>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800">
+                            <h3 class="font-bold text-lg mb-4">Quick Stats</h3>
+                            <div id="profile-stats" class="space-y-4">
+                                <!-- Loaded dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- My Applications Tab -->
+                <div id="profile-applications" class="profile-tab-content hidden">
+                    <div class="space-y-4">
+                        <div class="flex gap-2">
+                            <button onclick="app.filterApplications('all')" class="filter-btn active px-4 py-2 rounded-lg text-sm font-medium bg-primary-600 text-white">All</button>
+                            <button onclick="app.filterApplications('jobs')" class="filter-btn px-4 py-2 rounded-lg text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">Jobs</button>
+                            <button onclick="app.filterApplications('scholarships')" class="filter-btn px-4 py-2 rounded-lg text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">Scholarships</button>
+                        </div>
+                        <div id="my-applications-list" class="space-y-4">
+                            <!-- Loaded dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- My Appointments Tab -->
+                <div id="profile-appointments" class="profile-tab-content hidden">
+                    <div id="my-appointments-list" class="space-y-4">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+
+                <!-- My Events Tab -->
+                <div id="profile-events" class="profile-tab-content hidden">
+                    <div id="my-events-list" class="space-y-4">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Chat Widget -->
+    <div class="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+        <!-- Chat Window -->
+        <div id="chat-window"
+            class="hidden w-96 max-w-[calc(100vw-3rem)] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden transition-all duration-300 origin-bottom-right mb-4 flex flex-col h-[500px]">
+            <div class="p-4 bg-primary-600 text-white flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center"><i data-lucide="bot"
+                            class="w-5 h-5"></i></div>
+                    <span class="font-bold">Assistant</span>
+                </div>
+                <button onclick="app.toggleChat()" class="hover:bg-white/10 p-1 rounded"><i data-lucide="x"
+                        class="w-5 h-5"></i></button>
+            </div>
+
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-slate-950/50">
+                <!-- Messages -->
+                <div class="flex justify-start">
+                    <div
+                        class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 p-3 rounded-2xl rounded-bl-none shadow-sm text-sm max-w-[85%]">
+                        Hi! I'm your career assistant. I can help you with:
+                        <div class="mt-2 space-y-1">
+                            <div class="text-xs">• Find internships & jobs</div>
+                            <div class="text-xs">• Apply for scholarships</div>
+                            <div class="text-xs">• Register for events</div>
+                            <div class="text-xs">• Book counseling sessions</div>
+                            <div class="text-xs">• Check applications status</div>
+                        </div>
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            <button onclick="app.quickChatAction('internships')" class="text-xs px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-900/50">Browse Jobs</button>
+                            <button onclick="app.quickChatAction('scholarships')" class="text-xs px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-900/50">Scholarships</button>
+                            <button onclick="app.quickChatAction('events')" class="text-xs px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-900/50">Events</button>
+                            <button onclick="app.quickChatAction('profile')" class="text-xs px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-900/50">My Profile</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loader (Hidden by default) -->
+            <div id="chat-loader" class="hidden px-4 pb-2 bg-slate-50 dark:bg-slate-950/50">
+                <div
+                    class="flex items-center gap-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 w-fit px-3 py-2 rounded-2xl rounded-bl-none shadow-sm">
+                    <div class="w-1.5 h-1.5 bg-slate-400 rounded-full typing-dot"></div>
+                    <div class="w-1.5 h-1.5 bg-slate-400 rounded-full typing-dot"></div>
+                    <div class="w-1.5 h-1.5 bg-slate-400 rounded-full typing-dot"></div>
+                </div>
+            </div>
+
+            <div class="p-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
+                <div
+                    class="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 p-2 rounded-full border border-slate-200 dark:border-slate-700 focus-within:border-primary-400 dark:focus-within:border-primary-500 transition-colors">
+                    <input type="text" id="chat-input" placeholder="Type a message..."
+                        class="flex-1 bg-transparent px-3 text-sm text-slate-900 dark:text-white focus:outline-none"
+                        onkeydown="if(event.key==='Enter') app.sendMessage()">
+                    <button onclick="app.sendMessage()"
+                        class="p-2 bg-primary-600 text-white rounded-full hover:bg-primary-700 transition-colors"><i
+                            data-lucide="send" class="w-4 h-4"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toggle Button -->
+        <button onclick="app.toggleChat()"
+            class="p-4 bg-primary-600 text-white rounded-full shadow-2xl hover:bg-primary-700 transition-transform hover:scale-105 shadow-primary-600/30">
+            <i data-lucide="message-circle" class="w-7 h-7"></i>
+        </button>
+    </div>
+
+    <!-- Booking Modal -->
+    <div id="booking-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="app.closeBooking()"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md mx-4 bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-700 transition-all scale-95 opacity-0 max-h-[90vh] overflow-y-auto"
+            id="booking-content">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white">Book Session</h3>
+                <button onclick="app.closeBooking()"
+                    class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full"><i data-lucide="x"
+                        class="w-5 h-5"></i></button>
+            </div>
+
+            <div id="booking-details" class="mb-6">
+                <!-- Injected by JS -->
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Select Date</label>
+                    <div class="flex gap-2 overflow-x-auto pb-2">
+                        <button onclick="app.selectBookingDate(this, 'Today')"
+                            class="flex-shrink-0 px-4 py-2 rounded-xl bg-primary-600 text-white text-sm font-medium">Today</button>
+                        <button onclick="app.selectBookingDate(this, 'Tomorrow')"
+                            class="flex-shrink-0 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700">Tomorrow</button>
+                        <button onclick="app.selectBookingDate(this, 'Wed, 8')"
+                            class="flex-shrink-0 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700">Wed,
+                            8</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Select Time</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="app.selectBookingTime(this, '10:00 AM')"
+                            class="px-3 py-2 rounded-lg border border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 text-sm font-medium">10:00
+                            AM</button>
+                        <button onclick="app.selectBookingTime(this, '11:30 AM')"
+                            class="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-primary-500 text-slate-600 dark:text-slate-400 text-sm font-medium">11:30
+                            AM</button>
+                        <button onclick="app.selectBookingTime(this, '02:00 PM')"
+                            class="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-primary-500 text-slate-600 dark:text-slate-400 text-sm font-medium">02:00
+                            PM</button>
+                        <button onclick="app.selectBookingTime(this, '04:30 PM')"
+                            class="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-primary-500 text-slate-600 dark:text-slate-400 text-sm font-medium">04:30
+                            PM</button>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="app.confirmBooking()"
+                class="w-full mt-8 py-3 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl shadow-lg shadow-primary-600/30 transition-all">Confirm
+                Booking</button>
+        </div>
+    </div>
+
+    <!-- Rating Modal -->
+    <div id="rating-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+        <div
+            class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm mx-4 bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-slate-700 text-center">
+            <div
+                class="w-16 h-16 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="check" class="w-8 h-8"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2">Session Booked!</h3>
+            <p class="text-slate-500 dark:text-slate-400 mb-6">How would you rate this councillor?</p>
+
+            <div class="flex justify-center gap-2 mb-8">
+                <button onclick="app.rate(1)" class="text-slate-300 hover:text-yellow-400 transition-colors"><i
+                        data-lucide="star" class="w-8 h-8 fill-current"></i></button>
+                <button onclick="app.rate(2)" class="text-slate-300 hover:text-yellow-400 transition-colors"><i
+                        data-lucide="star" class="w-8 h-8 fill-current"></i></button>
+                <button onclick="app.rate(3)" class="text-slate-300 hover:text-yellow-400 transition-colors"><i
+                        data-lucide="star" class="w-8 h-8 fill-current"></i></button>
+                <button onclick="app.rate(4)" class="text-slate-300 hover:text-yellow-400 transition-colors"><i
+                        data-lucide="star" class="w-8 h-8 fill-current"></i></button>
+                <button onclick="app.rate(5)" class="text-slate-300 hover:text-yellow-400 transition-colors"><i
+                        data-lucide="star" class="w-8 h-8 fill-current"></i></button>
+            </div>
+
+            <button onclick="app.closeRating()"
+                class="w-full py-3 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Done</button>
+            <script>
+                // Make closeRating accessible
+                window.app.closeRating = function() {
+                    if (window.currentRating) {
+                        showToast(`Thank you for your ${window.currentRating}-star rating!`, 'success');
+                        window.currentRating = null;
+                    }
+                    document.getElementById('rating-modal').classList.add('hidden');
+                };
+            </script>
+        </div>
+    </div>
+
+    <script src="shared-data.js"></script>
+    <script type="module">
+        import { GoogleGenAI } from "@google/genai";
+
+        // --- Data ---
+        const data = {
+            internships: [
+                { id: 1, role: "Frontend Intern", company: "StartUpX", loc: "Remote", stipend: "₹25k/mo", dur: "3m", tags: ["React"] },
+                { id: 2, role: "Data Intern", company: "DataLabs", loc: "Bengaluru", stipend: "₹30k/mo", dur: "6m", tags: ["Python"] },
+                { id: 3, role: "UX Designer", company: "DesignCo", loc: "Mumbai", stipend: "₹15k/mo", dur: "3m", tags: ["Figma"] },
+                { id: 4, role: "Backend Intern", company: "CloudWorks", loc: "Hyderabad", stipend: "₹20k/mo", dur: "4m", tags: ["Node"] },
+            ],
+            scholarships: [
+                { id: 1, name: "Tech Excellence", provider: "ABC Foundation", amt: "₹75,000", due: "28 Feb" },
+                { id: 2, name: "Women in STEM", provider: "STEM Council", amt: "₹50,000", due: "10 Mar" },
+            ],
+            events: [
+                { id: 1, title: "Full-stack Bootcamp", date: "18 Dec", type: "Workshop", loc: "Lab 3" },
+                { id: 2, title: "AI Hackathon", date: "22 Dec", type: "Hackathon", loc: "Innovation Center" },
+            ],
+            jobs: [
+                { title: "Jr. Frontend Eng", company: "StartUpX", match: 92, loc: "Remote" },
+                { title: "Data Analyst", company: "Insight", match: 88, loc: "Hybrid" },
+                { title: "Platform Intern", company: "CloudWorks", match: 84, loc: "Hyderabad" }
+            ],
+            notifications: [
+                { text: "Application for Frontend Intern is in review.", time: "Just now", type: "info" },
+                { text: "Hackathon registration closes tomorrow.", time: "2h ago", type: "warn" },
+            ],
+            councillors: [
+                { id: 1, name: "Dr. Sarah Smith", role: "Career Coach", rating: 4.8, reviews: 120, price: 500, free: false, fav: false, img: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150" },
+                { id: 2, name: "Prof. John Doe", role: "Academic Advisor", rating: 4.9, reviews: 85, price: 0, free: true, fav: true, img: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=150" },
+                { id: 3, name: "Emily White", role: "Resume Expert", rating: 4.7, reviews: 200, price: 300, free: false, fav: false, img: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=150" },
+                { id: 4, name: "Michael Brown", role: "Interview Prep", rating: 4.6, reviews: 95, price: 450, free: false, fav: false, img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150" },
+                { id: 5, name: "Lisa Ray", role: "Study Abroad", rating: 4.9, reviews: 150, price: 0, free: true, fav: false, img: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=150" },
+            ]
+        };
+
+        // --- Logic ---
+        // Toast System
+        function showToast(message, type = 'info') {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.className = 'fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none';
+                document.body.appendChild(container);
+            }
+
+            const toast = document.createElement('div');
+            toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg transform transition-all duration-300 translate-y-10 opacity-0 ${type === 'success' ? 'bg-green-600 text-white' : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
+                }`;
+            toast.innerHTML = `
+                <i data-lucide="${type === 'success' ? 'check-circle' : 'info'}" class="w-5 h-5"></i>
+                <span class="font-medium text-sm">${message}</span>
+            `;
+
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-10', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-10', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        window.app = {
+            init: () => {
+                app.initTheme();
+                app.renderNav();
+                app.renderDashboard();
+                app.renderInternships();
+                app.renderScholarships();
+                app.renderEvents();
+                app.renderCouncillors();
+                app.renderAIJobs();
+                
+                // Update user profile display
+                const currentUser = window.sharedData.getCurrentUser();
+                if (currentUser) {
+                    const sidebarProfile = document.querySelector('.mt-auto .flex.items-center');
+                    if (sidebarProfile) {
+                        const initials = currentUser.name.split(' ').map(n => n[0]).join('').toUpperCase();
+                        sidebarProfile.querySelector('p').textContent = currentUser.name;
+                        sidebarProfile.querySelector('p.text-xs').textContent = currentUser.email;
+                        sidebarProfile.querySelector('.w-8').textContent = initials;
+                    }
+                }
+                
+                // Listen for data updates
+                window.addEventListener('dataUpdated', () => {
+                    app.renderDashboard();
+                    app.renderInternships();
+                    app.renderScholarships();
+                    app.renderEvents();
+                    
+                    // Update notification badge
+                    const currentUser = window.sharedData.getCurrentUser() || {email: 'student@demo.edu'};
+                    const notifications = window.sharedData.getNotifications(currentUser.email);
+                    const unreadCount = notifications.filter(n => !n.read).length;
+                    const badge = document.getElementById('notification-badge');
+                    if (badge) {
+                        badge.style.display = unreadCount > 0 ? 'block' : 'none';
+                    }
+                });
+                
+                lucide.createIcons();
+            },
+
+            // --- Theme Handling ---
+            initTheme: () => {
+                const savedTheme = localStorage.getItem('theme');
+                const isDark = savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                if (isDark) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            },
+
+            toggleTheme: () => {
+                const html = document.documentElement;
+                if (html.classList.contains('dark')) {
+                    html.classList.remove('dark');
+                    localStorage.setItem('theme', 'light');
+                } else {
+                    html.classList.add('dark');
+                    localStorage.setItem('theme', 'dark');
+                }
+            },
+
+            toggleSidebar: () => {
+                const sb = document.getElementById('sidebar');
+                const ov = document.getElementById('mobile-overlay');
+                sb.classList.toggle('-translate-x-full');
+                ov.classList.toggle('hidden');
+            },
+
+            navigate: (page) => {
+                document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
+                const targetPage = document.getElementById(page);
+                if (targetPage) {
+                    targetPage.classList.add('active');
+                }
+                
+                // Update all nav links
+                document.querySelectorAll('.nav-link').forEach(el => {
+                    el.classList.remove('bg-primary-600', 'text-white', 'shadow-md');
+                    el.classList.add('text-slate-500', 'dark:text-slate-400', 'hover:bg-slate-100', 'dark:hover:bg-slate-800');
+                });
+                
+                // Highlight active nav link
+                document.querySelectorAll('.nav-link').forEach(el => {
+                    if (el.dataset.page === page) {
+                        el.classList.add('bg-primary-600', 'text-white', 'shadow-md');
+                        el.classList.remove('text-slate-500', 'dark:text-slate-400', 'hover:bg-slate-100', 'dark:hover:bg-slate-800');
+                    }
+                });
+
+
+                // Load page-specific data
+                if (page === 'profile') {
+                    app.showProfileTab('overview');
+                } else if (page === 'dashboard') {
+                    app.renderDashboard();
+                } else if (page === 'internships') {
+                    app.renderInternships();
+                } else if (page === 'scholarships') {
+                    app.renderScholarships();
+                } else if (page === 'events') {
+                    app.renderEvents();
+                } else if (page === 'ai-jobs') {
+                    app.renderAIJobs();
+                }
+
+                // Scroll to top
+                document.getElementById('main-container').scrollTop = 0;
+
+                // Close sidebar on mobile if open
+                const sb = document.getElementById('sidebar');
+                if (!sb.classList.contains('-translate-x-full') && window.innerWidth < 1024) {
+                    app.toggleSidebar();
+                }
+            },
+
+            renderNav: () => {
+                const pages = [
+                    { id: 'dashboard', icon: 'layout-dashboard', label: 'Dashboard' },
+                    { id: 'internships', icon: 'briefcase', label: 'Internships' },
+                    { id: 'scholarships', icon: 'graduation-cap', label: 'Scholarships' },
+                    { id: 'events', icon: 'calendar', label: 'Events' },
+                    { id: 'councilling', icon: 'users', label: 'Councilling' },
+                    { id: 'ai-jobs', icon: 'bot', label: 'AI Jobs' },
+                    { id: 'profile', icon: 'user', label: 'Profile' },
+                ];
+
+                const navHTML = pages.map(p => `
+                    <button onclick="app.navigate('${p.id}')" data-page="${p.id}" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+                        <i data-lucide="${p.icon}" class="w-5 h-5"></i>
+                        <span class="font-medium">${p.label}</span>
+                    </button>
+                `).join('');
+
+                // Add Sign Out Button
+                const signOutHTML = `
+                    <button onclick="localStorage.removeItem('currentUser'); localStorage.removeItem('userRole'); window.location.href='login.html?logout=true'" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 mt-4">
+                        <i data-lucide="log-out" class="w-5 h-5"></i>
+                        <span class="font-medium">Sign Out</span>
+                    </button>
+                `;
+
+                document.getElementById('sidebar-nav').innerHTML = navHTML + signOutHTML;
+                app.navigate('dashboard'); // Set initial active
+            },
+
+            renderDashboard: () => {
+                const currentUser = window.sharedData.getCurrentUser();
+                const notifications = window.sharedData.getNotifications(currentUser?.email);
+                const recentNotifs = notifications.slice(0, 5);
+                
+                if (recentNotifs.length === 0) {
+                    document.getElementById('notifications-list').innerHTML = `
+                        <div class="text-center py-8 text-slate-500">
+                            <p>No notifications yet.</p>
+                        </div>
+                    `;
+                } else {
+                    const notifHTML = recentNotifs.map(n => {
+                        const timeAgo = app.getTimeAgo(new Date(n.createdAt));
+                        const typeColor = n.type === 'success' ? 'bg-green-500' : n.type === 'info' ? 'bg-blue-500' : 'bg-amber-500';
+                        return `
+                            <div class="flex items-start gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 transition-colors ${!n.read ? 'border-l-4 border-l-primary-500' : ''}">
+                                <div class="w-2 h-2 mt-2 rounded-full ${typeColor}"></div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-slate-900 dark:text-slate-200">${n.title || n.message}</p>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">${n.message || ''}</p>
+                                    <span class="text-xs text-slate-400 dark:text-slate-500">${timeAgo}</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    document.getElementById('notifications-list').innerHTML = notifHTML;
+                }
+                
+                // Update notification badge
+                const unreadCount = notifications.filter(n => !n.read).length;
+                const badge = document.querySelector('button[onclick*="notifications"] span');
+                if (badge) {
+                    badge.style.display = unreadCount > 0 ? 'block' : 'none';
+                }
+            },
+
+            renderInternships: (filterText = '') => {
+                const internships = window.sharedData.get().internships || data.internships;
+                const currentUser = window.sharedData.getCurrentUser() || {email: 'student@demo.edu'};
+                const appliedJobs = window.sharedData.getStudentJobApplications(currentUser.email).map(a => a.jobId);
+                
+                // Filter out already applied jobs - they should only appear in "My Applications"
+                let list = internships.filter(i => !appliedJobs.includes(i.id));
+                
+                if (filterText) {
+                    const lower = filterText.toLowerCase();
+                    list = list.filter(i => i.role.toLowerCase().includes(lower) || i.company.toLowerCase().includes(lower));
+                }
+                
+                if (list.length === 0) {
+                    document.getElementById('internships-grid').innerHTML = `
+                        <div class="col-span-full text-center py-12">
+                            <p class="text-slate-500 dark:text-slate-400">No available internships. Check your <a href="#" onclick="app.navigate('profile'); app.showProfileTab('applications')" class="text-primary-600 hover:underline">My Applications</a> for applied positions.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const html = list.map(i => `
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-card hover:shadow-lg transition-all flex flex-col group">
+                        <div class="flex justify-between items-start mb-4">
+                            <div><h3 class="font-bold text-lg text-slate-900 dark:text-white">${i.role}</h3><p class="text-slate-500 dark:text-slate-400 font-medium">${i.company}</p></div>
+                            <span class="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-bold rounded-full">${i.dur}</span>
+                        </div>
+                        <div class="space-y-2 mb-6 text-sm text-slate-500 dark:text-slate-400">
+                            <div class="flex items-center gap-2"><i data-lucide="map-pin" class="w-4 h-4"></i> ${i.loc}</div>
+                            <div class="flex items-center gap-2"><i data-lucide="banknote" class="w-4 h-4"></i> ${i.stipend}</div>
+                        </div>
+                        <button onclick="app.applyForInternship(${i.id})" class="mt-auto w-full py-2 rounded-lg bg-primary-600 text-white font-medium hover:bg-primary-700 transition-colors">Apply Now</button>
+                    </div>
+                `).join('');
+                document.getElementById('internships-grid').innerHTML = html;
+                lucide.createIcons();
+            },
+
+            renderScholarships: () => {
+                const scholarships = window.sharedData.get().scholarships || data.scholarships;
+                const currentUser = window.sharedData.getCurrentUser() || {email: 'student@demo.edu'};
+                const appliedScholarships = window.sharedData.getStudentScholarshipApplications(currentUser.email).map(a => a.scholarshipId);
+                
+                // Filter out already applied scholarships - they should only appear in "My Applications"
+                const availableScholarships = scholarships.filter(s => !appliedScholarships.includes(s.id));
+                
+                if (availableScholarships.length === 0) {
+                    document.getElementById('scholarships-grid').innerHTML = `
+                        <div class="col-span-full text-center py-12">
+                            <p class="text-slate-500 dark:text-slate-400">No available scholarships. Check your <a href="#" onclick="app.navigate('profile'); app.showProfileTab('applications')" class="text-primary-600 hover:underline">My Applications</a> for applied scholarships.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const html = availableScholarships.map(s => `
+                    <div class="relative bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-card hover:shadow-xl transition-all overflow-hidden group">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-purple-50 dark:bg-purple-900/10 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+                        <div class="relative z-10">
+                            <div class="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-lg flex items-center justify-center mb-3"><i data-lucide="award" class="w-5 h-5"></i></div>
+                            <h3 class="font-bold text-lg text-slate-900 dark:text-white">${s.name}</h3>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">${s.provider}</p>
+                            <div class="inline-block px-3 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg text-sm font-bold text-slate-900 dark:text-slate-100 mb-4">${s.amt}</div>
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-orange-600 dark:text-orange-400 font-medium">Due ${s.due}</span>
+                                <button onclick="app.applyForScholarship(${s.id})" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium">Apply Now</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                document.getElementById('scholarships-grid').innerHTML = html;
+                lucide.createIcons();
+            },
+
+            renderEvents: () => {
+                const events = window.sharedData.get().campusEvents || data.events;
+                const currentUser = window.sharedData.getCurrentUser() || {email: 'student@demo.edu'};
+                const registeredEvents = window.sharedData.getStudentEventRegistrations(currentUser.email).map(r => r.eventId);
+                
+                // Filter out already registered events - they should only appear in "My Events"
+                const availableEvents = events.filter(e => !registeredEvents.includes(e.id));
+                
+                if (availableEvents.length === 0) {
+                    document.getElementById('events-list').innerHTML = `
+                        <div class="text-center py-12">
+                            <p class="text-slate-500 dark:text-slate-400">No available events. Check your <a href="#" onclick="app.navigate('profile'); app.showProfileTab('events')" class="text-primary-600 hover:underline">My Events</a> for registered events.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const html = availableEvents.map(e => {
+                    const dateParts = e.date ? e.date.split(' ') : ['18', 'Dec'];
+                    return `
+                        <div class="flex flex-col md:flex-row md:items-center bg-white dark:bg-slate-900 rounded-2xl p-2 border border-slate-100 dark:border-slate-800 shadow-card hover:shadow-md transition-all">
+                            <div class="p-4 md:w-24 flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 shrink-0">
+                                <span class="text-xs font-bold text-slate-400 uppercase">${dateParts[1] || 'Dec'}</span>
+                                <span class="text-xl font-bold text-slate-900 dark:text-white">${dateParts[0] || '18'}</span>
+                            </div>
+                            <div class="p-4 flex-1">
+                                <div class="inline-block px-2 py-0.5 rounded-full bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 text-xs font-bold mb-1">${e.type}</div>
+                                <h3 class="text-lg font-bold text-slate-900 dark:text-white">${e.title}</h3>
+                                <p class="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1"><i data-lucide="map-pin" class="w-3 h-3"></i> ${e.loc}</p>
+                            </div>
+                            <button onclick="app.registerForEvent(${e.id})" class="mx-4 mb-4 md:mb-0 px-6 py-2 bg-slate-900 dark:bg-slate-700 text-white rounded-xl text-sm font-medium hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors">Register</button>
+                        </div>
+                    `;
+                }).join('');
+                document.getElementById('events-list').innerHTML = html;
+                lucide.createIcons();
+            },
+
+            renderCouncillors: (filterText = '', sortBy = 'all') => {
+                let list = data.councillors;
+
+                // Filter
+                if (filterText) {
+                    const lower = filterText.toLowerCase();
+                    list = list.filter(c => c.name.toLowerCase().includes(lower) || c.role.toLowerCase().includes(lower));
+                }
+
+                // Sort
+                if (sortBy === 'price-low') list.sort((a, b) => a.price - b.price);
+                if (sortBy === 'price-high') list.sort((a, b) => b.price - a.price);
+                if (sortBy === 'free') list = list.filter(c => c.free);
+
+                const html = list.map(c => `
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-card hover:shadow-xl transition-all group relative">
+                        <button onclick="app.toggleFav(${c.id})" class="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors z-10">
+                            <i data-lucide="heart" class="w-5 h-5 ${c.fav ? 'fill-red-500 text-red-500' : 'text-slate-400'}"></i>
+                        </button>
+                        
+                        <div class="flex items-center gap-4 mb-4">
+                            <img src="${c.img}" alt="${c.name}" class="w-16 h-16 rounded-full object-cover border-2 border-white dark:border-slate-800 shadow-md">
+                            <div>
+                                <h3 class="font-bold text-slate-900 dark:text-white">${c.name}</h3>
+                                <p class="text-sm text-slate-500 dark:text-slate-400">${c.role}</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 mb-4">
+                            <div class="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded-lg">
+                                <i data-lucide="star" class="w-4 h-4 text-yellow-500 fill-current"></i>
+                                <span class="text-sm font-bold text-yellow-700 dark:text-yellow-400">${c.rating}</span>
+                            </div>
+                            <span class="text-xs text-slate-400">(${c.reviews} reviews)</span>
+                        </div>
+
+                        <div class="flex items-center justify-between mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                            <div>
+                                <span class="text-xs text-slate-400 uppercase font-bold">Session Price</span>
+                                <div class="text-lg font-bold text-slate-900 dark:text-white">${c.free ? 'Free' : '₹' + c.price}</div>
+                            </div>
+                            <button onclick="app.openBooking(${c.id})" class="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl transition-colors shadow-lg shadow-primary-600/20">Book</button>
+                        </div>
+                    </div>
+                `).join('');
+                document.getElementById('councillors-grid').innerHTML = html;
+                lucide.createIcons();
+            },
+
+            filterCouncillors: () => {
+                const text = document.getElementById('councillor-search').value;
+                const sort = document.getElementById('councillor-sort').value;
+                app.renderCouncillors(text, sort);
+            },
+
+            filterInternships: () => {
+                const text = document.querySelector('input[placeholder="Filter roles..."]').value;
+                app.renderInternships(text);
+            },
+
+            filterInternshipsByTag: (tag) => {
+                const internships = window.sharedData.get().internships || data.internships;
+                const currentUser = window.sharedData.getCurrentUser() || {email: 'student@demo.edu'};
+                const appliedJobs = window.sharedData.getStudentJobApplications(currentUser.email).map(a => a.jobId);
+                
+                // Filter out applied jobs
+                let filtered = internships.filter(i => !appliedJobs.includes(i.id));
+                
+                if (tag) {
+                    filtered = filtered.filter(i => i.tags && i.tags.includes(tag));
+                }
+                
+                if (filtered.length === 0) {
+                    document.getElementById('internships-grid').innerHTML = `
+                        <div class="col-span-full text-center py-12">
+                            <p class="text-slate-500 dark:text-slate-400">No available internships. Check your <a href="#" onclick="app.navigate('profile'); app.showProfileTab('applications')" class="text-primary-600 hover:underline">My Applications</a> for applied positions.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const html = filtered.map(i => `
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-card hover:shadow-lg transition-all flex flex-col group">
+                        <div class="flex justify-between items-start mb-4">
+                            <div><h3 class="font-bold text-lg text-slate-900 dark:text-white">${i.role}</h3><p class="text-slate-500 dark:text-slate-400 font-medium">${i.company}</p></div>
+                            <span class="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-bold rounded-full">${i.dur}</span>
+                        </div>
+                        <div class="space-y-2 mb-6 text-sm text-slate-500 dark:text-slate-400">
+                            <div class="flex items-center gap-2"><i data-lucide="map-pin" class="w-4 h-4"></i> ${i.loc}</div>
+                            <div class="flex items-center gap-2"><i data-lucide="banknote" class="w-4 h-4"></i> ${i.stipend}</div>
+                        </div>
+                        <button onclick="app.applyForInternship(${i.id})" class="mt-auto w-full py-2 rounded-lg bg-primary-600 text-white font-medium hover:bg-primary-700 transition-colors">Apply Now</button>
+                    </div>
+                `).join('');
+                document.getElementById('internships-grid').innerHTML = html;
+                lucide.createIcons();
+            },
+
+            toggleFav: (id) => {
+                const c = data.councillors.find(x => x.id === id);
+                if (c) {
+                    c.fav = !c.fav;
+                    app.filterCouncillors(); // Re-render to show change
+                }
+            },
+
+            openBooking: (id) => {
+                const c = data.councillors.find(x => x.id === id);
+                if (!c) return;
+
+                // Store current booking councillor ID
+                window.currentBookingCouncillorId = id;
+
+                const html = `
+                    <div class="flex items-center gap-4">
+                        <img src="${c.img}" class="w-16 h-16 rounded-full object-cover">
+                        <div>
+                            <h4 class="font-bold text-lg text-slate-900 dark:text-white">${c.name}</h4>
+                            <p class="text-slate-500 dark:text-slate-400">${c.role}</p>
+                            <p class="font-bold text-primary-600 mt-1">${c.free ? 'Free Session' : '₹' + c.price + ' / hr'}</p>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('booking-details').innerHTML = html;
+
+                // Set default selections
+                window.selectedBookingDate = 'Today';
+                window.selectedBookingTime = '10:00 AM';
+                
+                // Reset date/time selections
+                document.querySelectorAll('#booking-modal button[onclick*="selectBookingDate"]').forEach(btn => {
+                    if (btn.textContent.trim() === 'Today') {
+                        btn.classList.add('bg-primary-600', 'text-white');
+                        btn.classList.remove('bg-slate-100', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-400');
+                    } else {
+                        btn.classList.remove('bg-primary-600', 'text-white');
+                        btn.classList.add('bg-slate-100', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-400');
+                    }
+                });
+                document.querySelectorAll('#booking-modal button[onclick*="selectBookingTime"]').forEach(btn => {
+                    if (btn.textContent.trim() === '10:00 AM') {
+                        btn.classList.add('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/20', 'text-primary-700', 'dark:text-primary-300');
+                        btn.classList.remove('border-slate-200', 'dark:border-slate-700', 'text-slate-600', 'dark:text-slate-400');
+                    } else {
+                        btn.classList.remove('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/20', 'text-primary-700', 'dark:text-primary-300');
+                        btn.classList.add('border-slate-200', 'dark:border-slate-700', 'text-slate-600', 'dark:text-slate-400');
+                    }
+                });
+
+                const modal = document.getElementById('booking-modal');
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    document.getElementById('booking-content').classList.remove('scale-95', 'opacity-0');
+                }, 10);
+            },
+
+            closeBooking: () => {
+                const content = document.getElementById('booking-content');
+                content.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => {
+                    document.getElementById('booking-modal').classList.add('hidden');
+                }, 200);
+            },
+
+            confirmBooking: () => {
+                // Get selected date and time
+                const selectedDate = window.selectedBookingDate || 'Today';
+                const selectedTime = window.selectedBookingTime || '10:00 AM';
+                const councillorId = window.currentBookingCouncillorId;
+                
+                if (!selectedDate || !selectedTime) {
+                    showToast('Please select a date and time', 'info');
+                    return;
+                }
+                
+                if (!councillorId) {
+                    showToast('Error: Please try again', 'info');
+                    return;
+                }
+
+                // Get current user info
+                const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{"name":"Student","email":"student@demo.edu"}');
+                const councillor = data.councillors.find(c => c.id === councillorId);
+
+                // Save appointment to shared data
+                const appointment = window.sharedData.addAppointment({
+                    councillorId: councillorId,
+                    councillorName: councillor.name,
+                    councillorRole: councillor.role,
+                    studentName: currentUser.name,
+                    studentEmail: currentUser.email,
+                    date: selectedDate,
+                    time: selectedTime,
+                    price: councillor.price,
+                    free: councillor.free
+                });
+
+                app.closeBooking();
+                showToast('Appointment booked successfully!', 'success');
+                
+                setTimeout(() => {
+                    document.getElementById('rating-modal').classList.remove('hidden');
+                    window.currentBookingRating = { councillorId, appointmentId: appointment.id };
+                }, 300);
+            },
+
+            selectBookingDate: (btn, date) => {
+                document.querySelectorAll('#booking-modal button[onclick*="selectBookingDate"]').forEach(b => {
+                    b.classList.remove('bg-primary-600', 'text-white');
+                    b.classList.add('bg-slate-100', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-400');
+                });
+                btn.classList.remove('bg-slate-100', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-400');
+                btn.classList.add('bg-primary-600', 'text-white');
+                window.selectedBookingDate = date;
+            },
+
+            selectBookingTime: (btn, time) => {
+                document.querySelectorAll('#booking-modal button[onclick*="selectBookingTime"]').forEach(b => {
+                    b.classList.remove('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/20', 'text-primary-700', 'dark:text-primary-300');
+                    b.classList.add('border-slate-200', 'dark:border-slate-700', 'text-slate-600', 'dark:text-slate-400');
+                });
+                btn.classList.remove('border-slate-200', 'dark:border-slate-700', 'text-slate-600', 'dark:text-slate-400');
+                btn.classList.add('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/20', 'text-primary-700', 'dark:text-primary-300');
+                window.selectedBookingTime = time;
+            },
+
+            closeRating: () => {
+                document.getElementById('rating-modal').classList.add('hidden');
+            },
+
+            rate: (stars) => {
+                // Visual feedback
+                const btns = document.querySelectorAll('#rating-modal button i');
+                btns.forEach((icon, idx) => {
+                    if (idx < stars) icon.classList.add('fill-yellow-400', 'text-yellow-400');
+                    else icon.classList.remove('fill-yellow-400', 'text-yellow-400');
+                });
+                // Store rating
+                window.currentRating = stars;
+            },
+
+            renderAIJobs: () => {
+                const jobs = data.jobs || [];
+                const currentUser = window.sharedData.getCurrentUser() || {email: 'student@demo.edu'};
+                const appliedJobs = window.sharedData.getStudentJobApplications(currentUser.email);
+                
+                // Filter out already applied jobs - match by title and company
+                const availableJobs = jobs.filter(j => {
+                    const jobKey = `${j.title}-${j.company}`.toLowerCase();
+                    return !appliedJobs.some(app => {
+                        // Try to match by jobId or by title+company
+                        if (app.jobId) {
+                            const appliedKey = typeof app.jobId === 'string' ? app.jobId : `${app.jobId}`;
+                            return appliedKey === jobKey || appliedKey === j.title.toLowerCase().replace(/\s+/g, '-');
+                        }
+                        return false;
+                    });
+                });
+                
+                if (availableJobs.length === 0) {
+                    document.getElementById('ai-jobs-grid').innerHTML = `
+                        <div class="col-span-full text-center py-12">
+                            <p class="text-slate-500 dark:text-slate-400">No available jobs. Check your <a href="#" onclick="app.navigate('profile'); app.showProfileTab('applications')" class="text-primary-600 hover:underline">My Applications</a> for applied positions.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const html = availableJobs.map(j => `
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-card hover:shadow-xl hover:-translate-y-1 transition-all">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="px-2 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-xs font-bold rounded-lg flex items-center gap-1"><i data-lucide="sparkles" class="w-3 h-3"></i> ${j.match}% Match</span>
+                            <i data-lucide="bookmark" class="w-5 h-5 text-slate-300 hover:text-primary-600 dark:text-slate-600 dark:hover:text-primary-400 cursor-pointer"></i>
+                        </div>
+                        <h3 class="font-bold text-slate-900 dark:text-white">${j.title}</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">${j.company}</p>
+                        <div class="flex items-center gap-2 text-xs text-slate-400 mb-6"><i data-lucide="map-pin" class="w-3 h-3"></i> ${j.loc}</div>
+                        <button onclick="app.applyForJob('${j.title}', '${j.company}')" class="w-full py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-primary-50 dark:hover:bg-primary-900/30 hover:text-primary-600 dark:hover:text-primary-400 hover:border-primary-200 dark:hover:border-primary-800 transition-colors">Apply Now</button>
+                    </div>
+                `).join('');
+                document.getElementById('ai-jobs-grid').innerHTML = html;
+                lucide.createIcons();
+            },
+
+            applyForInternship: (internshipId) => {
+                const currentUser = window.sharedData.getCurrentUser() || JSON.parse(localStorage.getItem('currentUser') || '{"name":"Student","email":"student@demo.edu"}');
+                const internships = window.sharedData.get().internships || data.internships;
+                const internship = internships.find(i => i.id === internshipId);
+                
+                if (!internship) {
+                    showToast('Job not found!', 'info');
+                    return;
+                }
+
+                // Check if already applied
+                const existingApps = window.sharedData.getStudentJobApplications(currentUser.email);
+                if (existingApps.find(app => app.jobId === internshipId)) {
+                    showToast('You have already applied for this position!', 'info');
+                    app.renderInternships(); // Refresh to remove from list
+                    return;
+                }
+
+                // Create job application
+                const result = window.sharedData.applyForJob(internshipId, {
+                    name: currentUser.name,
+                    email: currentUser.email
+                });
+
+                if (result && result.duplicate) {
+                    showToast('You have already applied for this position!', 'info');
+                } else {
+                    showToast(`Application submitted for ${internship.role} at ${internship.company}!`, 'success');
+                }
+                
+                // Refresh listings to remove applied item
+                app.renderInternships();
+            },
+
+            registerForEvent: (eventId) => {
+                const currentUser = window.sharedData.getCurrentUser() || JSON.parse(localStorage.getItem('currentUser') || '{"name":"Student","email":"student@demo.edu"}');
+                const events = window.sharedData.get().campusEvents || data.events;
+                const event = events.find(e => e.id === eventId);
+                
+                if (!event) {
+                    showToast('Event not found!', 'info');
+                    return;
+                }
+
+                // Check if already registered
+                const existingRegs = window.sharedData.getStudentEventRegistrations(currentUser.email);
+                if (existingRegs.find(reg => reg.eventId === eventId)) {
+                    showToast('You have already registered for this event!', 'info');
+                    app.renderEvents(); // Refresh to remove from list
+                    return;
+                }
+
+                const result = window.sharedData.registerForEvent(eventId, {
+                    name: currentUser.name,
+                    email: currentUser.email
+                });
+
+                if (result) {
+                    if (result.duplicate) {
+                        showToast('You have already registered for this event!', 'info');
+                    } else {
+                        showToast(`Successfully registered for ${event.title}!`, 'success');
+                    }
+                    // Refresh listings to remove registered item
+                    app.renderEvents();
+                }
+            },
+
+            applyForJob: (jobTitle, company) => {
+                const currentUser = window.sharedData.getCurrentUser() || JSON.parse(localStorage.getItem('currentUser') || '{"name":"Student","email":"student@demo.edu"}');
+                
+                // Create a unique job ID from title and company
+                const jobId = `${jobTitle}-${company}`.toLowerCase().replace(/\s+/g, '-');
+                
+                // Check if already applied
+                const existingApps = window.sharedData.getStudentJobApplications(currentUser.email);
+                const alreadyApplied = existingApps.find(app => {
+                    const appKey = typeof app.jobId === 'string' ? app.jobId : `${app.jobId}`;
+                    return appKey === jobId || 
+                           appKey === jobTitle.toLowerCase().replace(/\s+/g, '-') ||
+                           (app.jobTitle === jobTitle && app.jobCompany === company);
+                });
+                
+                if (alreadyApplied) {
+                    showToast('You have already applied for this position!', 'info');
+                    app.renderAIJobs(); // Refresh to remove from list
+                    return;
+                }
+                
+                const result = window.sharedData.applyForJob(jobId, {
+                    name: currentUser.name,
+                    email: currentUser.email,
+                    jobTitle: jobTitle,
+                    jobCompany: company
+                });
+
+                if (result && result.duplicate) {
+                    showToast('You have already applied for this position!', 'info');
+                } else {
+                    showToast(`Application submitted for ${jobTitle} at ${company}!`, 'success');
+                }
+                
+                // Refresh listings to remove applied item
+                app.renderAIJobs();
+            },
+
+            applyForScholarship: (scholarshipId) => {
+                const currentUser = window.sharedData.getCurrentUser() || JSON.parse(localStorage.getItem('currentUser') || '{"name":"Student","email":"student@demo.edu"}');
+                const scholarships = window.sharedData.get().scholarships || data.scholarships;
+                const scholarship = scholarships.find(s => s.id === scholarshipId);
+                
+                if (!scholarship) {
+                    showToast('Scholarship not found!', 'info');
+                    return;
+                }
+
+                // Check if already applied
+                const existingApps = window.sharedData.getStudentScholarshipApplications(currentUser.email);
+                if (existingApps.find(app => app.scholarshipId === scholarshipId)) {
+                    showToast('You have already applied for this scholarship!', 'info');
+                    app.renderScholarships(); // Refresh to remove from list
+                    return;
+                }
+
+                const result = window.sharedData.applyForScholarship(scholarshipId, {
+                    name: currentUser.name,
+                    email: currentUser.email
+                });
+
+                if (result) {
+                    if (result.duplicate) {
+                        showToast('You have already applied for this scholarship!', 'info');
+                    } else {
+                        showToast(`Scholarship application submitted for ${scholarship.name}!`, 'success');
+                    }
+                    // Refresh listings to remove applied item
+                    app.renderScholarships();
+                }
+            },
+
+            // Search functionality
+            handleSearch: (query) => {
+                window.searchQuery = query;
+            },
+
+            performSearch: () => {
+                const query = document.getElementById('global-search').value.trim();
+                if (!query) return;
+
+                const results = window.sharedData.search(query);
+                
+                // Show search results modal or navigate
+                if (results.internships.length > 0) {
+                    app.navigate('internships');
+                    document.querySelector('input[placeholder="Filter roles..."]').value = query;
+                    app.filterInternships();
+                } else if (results.events.length > 0) {
+                    app.navigate('events');
+                } else if (results.scholarships.length > 0) {
+                    app.navigate('scholarships');
+                } else {
+                    showToast('No results found', 'info');
+                }
+            },
+
+            // Profile functions
+            showProfileTab: (tab) => {
+                document.querySelectorAll('.profile-tab-content').forEach(content => {
+                    content.classList.add('hidden');
+                });
+                document.querySelectorAll('.profile-tab').forEach(btn => {
+                    btn.classList.remove('border-b-2', 'border-primary-600', 'text-primary-600');
+                    btn.classList.add('text-slate-500', 'dark:text-slate-400');
+                });
+
+                const content = document.getElementById(`profile-${tab}`);
+                const button = event.target;
+                if (content) {
+                    content.classList.remove('hidden');
+                    button.classList.remove('text-slate-500', 'dark:text-slate-400');
+                    button.classList.add('border-b-2', 'border-primary-600', 'text-primary-600');
+                }
+
+                if (tab === 'overview') {
+                    app.loadProfileOverview();
+                } else if (tab === 'applications') {
+                    app.loadMyApplications();
+                } else if (tab === 'appointments') {
+                    app.loadMyAppointments();
+                } else if (tab === 'events') {
+                    app.loadMyEvents();
+                }
+            },
+
+            loadProfileOverview: () => {
+                const currentUser = window.sharedData.getCurrentUser() || {name: 'Student', email: 'student@demo.edu'};
+                const initials = currentUser.name.split(' ').map(n => n[0]).join('').toUpperCase();
+                
+                // Update sidebar profile
+                const sidebarProfile = document.querySelector('.mt-auto .flex.items-center');
+                if (sidebarProfile) {
+                    sidebarProfile.querySelector('p').textContent = currentUser.name;
+                    sidebarProfile.querySelector('p.text-xs').textContent = currentUser.email;
+                    sidebarProfile.querySelector('.w-8').textContent = initials;
+                }
+
+                // Load profile info
+                document.getElementById('profile-info').innerHTML = `
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-16 h-16 rounded-full bg-gradient-to-r from-sky-400 to-primary-500 flex items-center justify-center text-white text-xl font-bold">
+                            ${initials}
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-lg">${currentUser.name}</h4>
+                            <p class="text-sm text-slate-500">${currentUser.email}</p>
+                        </div>
+                    </div>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between"><span class="text-slate-500">Role:</span><span class="font-medium">Student</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">Member Since:</span><span class="font-medium">${new Date().toLocaleDateString()}</span></div>
+                    </div>
+                `;
+
+                // Load stats
+                const jobApps = window.sharedData.getStudentJobApplications(currentUser.email);
+                const schApps = window.sharedData.getStudentScholarshipApplications(currentUser.email);
+                const appointments = window.sharedData.getStudentAppointments(currentUser.email);
+                const events = window.sharedData.getStudentEventRegistrations(currentUser.email);
+
+                document.getElementById('profile-stats').innerHTML = `
+                    <div class="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                        <span class="text-sm text-slate-600 dark:text-slate-400">Job Applications</span>
+                        <span class="text-2xl font-bold text-blue-600">${jobApps.length}</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                        <span class="text-sm text-slate-600 dark:text-slate-400">Scholarship Applications</span>
+                        <span class="text-2xl font-bold text-purple-600">${schApps.length}</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-pink-50 dark:bg-pink-900/20 rounded-lg">
+                        <span class="text-sm text-slate-600 dark:text-slate-400">Appointments</span>
+                        <span class="text-2xl font-bold text-pink-600">${appointments.length}</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                        <span class="text-sm text-slate-600 dark:text-slate-400">Events Registered</span>
+                        <span class="text-2xl font-bold text-orange-600">${events.length}</span>
+                    </div>
+                `;
+            },
+
+            loadMyApplications: (filter = 'all') => {
+                const currentUser = window.sharedData.getCurrentUser() || {email: 'student@demo.edu'};
+                const jobApps = window.sharedData.getStudentJobApplications(currentUser.email);
+                const schApps = window.sharedData.getStudentScholarshipApplications(currentUser.email);
+                
+                let applications = [];
+                if (filter === 'all') {
+                    applications = [...jobApps.map(a => ({...a, type: 'job'})), ...schApps.map(a => ({...a, type: 'scholarship'}))];
+                } else if (filter === 'jobs') {
+                    applications = jobApps.map(a => ({...a, type: 'job'}));
+                } else if (filter === 'scholarships') {
+                    applications = schApps.map(a => ({...a, type: 'scholarship'}));
+                }
+
+                applications.sort((a, b) => new Date(b.appliedAt) - new Date(a.appliedAt));
+
+                const container = document.getElementById('my-applications-list');
+                if (!container) return;
+
+                if (applications.length === 0) {
+                    container.innerHTML = '<div class="text-center py-8 text-slate-500">No applications yet.</div>';
+                    return;
+                }
+
+                container.innerHTML = applications.map(app => {
+                    const statusClass = app.status === 'pending' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' : 
+                                       app.status === 'accepted' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 
+                                       'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400';
+                    
+                    let title = '';
+                    let subtitle = '';
+                    
+                    if (app.type === 'job') {
+                        // Try to find job by ID first
+                        const internships = window.sharedData.get().internships || [];
+                        const jobs = window.sharedData.get().jobs || [];
+                        const job = internships.find(j => j.id === app.jobId) || 
+                                   jobs.find(j => j.id === app.jobId);
+                        
+                        if (job) {
+                            title = job.role || job.title || 'Job Application';
+                            subtitle = job.company || '';
+                        } else if (app.jobTitle && app.jobCompany) {
+                            // Use stored title and company
+                            title = app.jobTitle;
+                            subtitle = app.jobCompany;
+                        } else {
+                            // Fallback to jobId or generic
+                            title = typeof app.jobId === 'string' ? app.jobId.replace(/-/g, ' ') : 'Job Application';
+                            subtitle = '';
+                        }
+                    } else {
+                        const scholarships = window.sharedData.get().scholarships || [];
+                        const sch = scholarships.find(s => s.id === app.scholarshipId);
+                        title = sch ? sch.name : 'Scholarship Application';
+                        subtitle = sch ? sch.provider : '';
+                    }
+
+                    return `
+                        <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-bold text-lg">${title}</h4>
+                                    ${subtitle ? `<p class="text-sm text-slate-500 mt-1">${subtitle}</p>` : ''}
+                                    <p class="text-sm text-slate-400 mt-2">Applied on ${new Date(app.appliedAt).toLocaleDateString()}</p>
+                                </div>
+                                <span class="px-3 py-1 rounded-lg text-xs font-medium ${statusClass}">${app.status}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            },
+
+            filterApplications: (filter) => {
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.classList.remove('bg-primary-600', 'text-white');
+                    btn.classList.add('bg-slate-100', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-400');
+                });
+                event.target.classList.remove('bg-slate-100', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-400');
+                event.target.classList.add('bg-primary-600', 'text-white');
+                app.loadMyApplications(filter);
+            },
+
+            loadMyAppointments: () => {
+                const currentUser = window.sharedData.getCurrentUser() || {email: 'student@demo.edu'};
+                const appointments = window.sharedData.getStudentAppointments(currentUser.email);
+                
+                const container = document.getElementById('my-appointments-list');
+                if (!container) return;
+
+                if (appointments.length === 0) {
+                    container.innerHTML = '<div class="text-center py-8 text-slate-500">No appointments scheduled.</div>';
+                    return;
+                }
+
+                container.innerHTML = appointments.map(apt => {
+                    const statusClass = apt.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 
+                                       apt.status === 'confirmed' ? 'bg-green-100 text-green-700' : 
+                                       'bg-slate-100 text-slate-700';
+                    return `
+                        <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-bold text-lg">${apt.councillorName}</h4>
+                                    <p class="text-sm text-slate-500 mt-1">${apt.councillorRole}</p>
+                                    <p class="text-sm text-slate-400 mt-2">${apt.date} at ${apt.time}</p>
+                                </div>
+                                <span class="px-3 py-1 rounded-lg text-xs font-medium ${statusClass}">${apt.status}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            },
+
+            loadMyEvents: () => {
+                const currentUser = window.sharedData.getCurrentUser() || {email: 'student@demo.edu'};
+                const registrations = window.sharedData.getStudentEventRegistrations(currentUser.email);
+                const events = window.sharedData.get().campusEvents;
+                
+                const container = document.getElementById('my-events-list');
+                if (!container) return;
+
+                if (registrations.length === 0) {
+                    container.innerHTML = '<div class="text-center py-8 text-slate-500">No events registered.</div>';
+                    return;
+                }
+
+                container.innerHTML = registrations.map(reg => {
+                    const event = events.find(e => e.id === reg.eventId);
+                    if (!event) return '';
+                    return `
+                        <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-bold text-lg">${event.title}</h4>
+                                    <p class="text-sm text-slate-500 mt-1">${event.type} • ${event.loc}</p>
+                                    <p class="text-sm text-slate-400 mt-2">${event.date} • Registered on ${new Date(reg.registeredAt).toLocaleDateString()}</p>
+                                </div>
+                                <span class="px-3 py-1 rounded-lg text-xs font-medium bg-green-100 text-green-700">Registered</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            },
+
+            editProfile: () => {
+                showToast('Profile editor coming soon!', 'info');
+            },
+
+            getTimeAgo: (date) => {
+                const now = new Date();
+                const diff = now - date;
+                const minutes = Math.floor(diff / 60000);
+                const hours = Math.floor(diff / 3600000);
+                const days = Math.floor(diff / 86400000);
+                
+                if (minutes < 1) return 'Just now';
+                if (minutes < 60) return `${minutes}m ago`;
+                if (hours < 24) return `${hours}h ago`;
+                return `${days}d ago`;
+            },
+
+            showNotifications: () => {
+                const currentUser = window.sharedData.getCurrentUser() || {email: 'student@demo.edu'};
+                const notifications = window.sharedData.getNotifications(currentUser.email);
+                
+                if (notifications.length === 0) {
+                    showToast('No notifications', 'info');
+                    return;
+                }
+
+                // Show notification panel or navigate to dashboard
+                app.navigate('dashboard');
+                document.getElementById('notification-badge').style.display = 'none';
+                app.renderDashboard();
+            },
+
+            markAllNotificationsRead: () => {
+                const currentUser = window.sharedData.getCurrentUser() || {email: 'student@demo.edu'};
+                window.sharedData.markAllNotificationsRead(currentUser.email);
+                document.getElementById('notification-badge').style.display = 'none';
+                app.renderDashboard();
+                showToast('All notifications marked as read', 'success');
+            },
+
+            // --- Chat ---
+            toggleChat: () => {
+                const win = document.getElementById('chat-window');
+                win.classList.toggle('hidden');
+                if (!win.classList.contains('hidden')) document.getElementById('chat-input').focus();
+            },
+
+            appendMessage: (text, sender) => {
+                const div = document.createElement('div');
+                div.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
+
+                const bubbleClass = sender === 'user'
+                    ? 'bg-primary-600 text-white rounded-br-none'
+                    : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-bl-none shadow-sm';
+
+                div.innerHTML = `<div class="${bubbleClass} p-3 rounded-2xl text-sm max-w-[85%]">${text}</div>`;
+
+                const container = document.getElementById('chat-messages');
+                container.appendChild(div);
+                container.scrollTop = container.scrollHeight;
+            },
+
+            toggleLoader: (show) => {
+                const loader = document.getElementById('chat-loader');
+                if (show) {
+                    loader.classList.remove('hidden');
+                    document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+                } else {
+                    loader.classList.add('hidden');
+                }
+            },
+
+            quickChatAction: (action) => {
+                const actions = {
+                    'internships': { msg: "🚀 Opening internships page!", page: 'internships' },
+                    'scholarships': { msg: "💰 Here are available scholarships!", page: 'scholarships' },
+                    'events': { msg: "📅 Check out these upcoming events!", page: 'events' },
+                    'profile': { msg: "📊 Opening your profile!", page: 'profile' },
+                    'councilling': { msg: "👨‍🏫 Finding counselors for you!", page: 'councilling' },
+                    'ai-jobs': { msg: "🤖 Here are AI-matched jobs!", page: 'ai-jobs' },
+                    'dashboard': { msg: "🏠 Taking you to dashboard!", page: 'dashboard' }
+                };
+                
+                if (actions[action]) {
+                    app.appendMessage(actions[action].msg, 'bot');
+                    app.navigate(actions[action].page);
+                }
+            },
+
+            sendMessage: async () => {
+                const input = document.getElementById('chat-input');
+                const text = input.value.trim();
+                if (!text) return;
+
+                app.appendMessage(text, 'user');
+                input.value = '';
+                app.toggleLoader(true);
+
+                try {
+                    const API_KEY = process.env.API_KEY;
+                    if (API_KEY) {
+                        const ai = new GoogleGenAI({ apiKey: API_KEY });
+                        const response = await ai.models.generateContent({
+                            model: "gemini-2.5-flash",
+                            contents: text,
+                            config: {
+                                systemInstruction: "You are a helpful Student Career Hub assistant. You help students with Internships, Scholarships, Events, and Fee payments. If a user asks to go to a specific page (dashboard, internships, scholarships, events, fees, ai-jobs), reply and then add a special token [NAVIGATE:page_id] at the end. Keep answers concise, friendly and encouraging."
+                            }
+                        });
+
+                        let reply = response.text || "I'm having trouble connecting.";
+
+                        // Handle Navigation Token
+                        const navMatch = reply.match(/\[NAVIGATE:([a-z-]+)\]/);
+                        if (navMatch) {
+                            const page = navMatch[1];
+                            reply = reply.replace(navMatch[0], ''); // Remove token from display text
+                            app.navigate(page);
+                        }
+
+                        app.appendMessage(reply, 'bot');
+                    } else {
+                        // Fast intelligent fallback - instant responses
+                        let reply = "";
+                        let navigateTo = null;
+                        const lower = text.toLowerCase();
+                        const currentUser = window.sharedData.getCurrentUser() || {email: 'student@demo.edu'};
+
+                        // Quick pattern matching for instant responses
+                        if (lower.includes('intern') || lower.includes('job') || lower.includes('career') || lower.includes('work')) {
+                            reply = "🚀 Opening internships page! Browse opportunities tailored for you.";
+                            navigateTo = 'internships';
+                        } else if (lower.includes('scholarship') || lower.includes('fund') || lower.includes('financial aid') || lower.includes('money')) {
+                            reply = "💰 Here are available scholarships! Apply now to get funding.";
+                            navigateTo = 'scholarships';
+                        } else if (lower.includes('event') || lower.includes('workshop') || lower.includes('seminar') || lower.includes('meetup')) {
+                            reply = "📅 Check out these upcoming events! Register to secure your spot.";
+                            navigateTo = 'events';
+                        } else if (lower.includes('councill') || lower.includes('book') || lower.includes('session') || lower.includes('mentor') || lower.includes('advice')) {
+                            reply = "👨‍🏫 Let's find you a counselor! Book a session for expert guidance.";
+                            navigateTo = 'councilling';
+                        } else if (lower.includes('profile') || lower.includes('application') || lower.includes('my ') || lower.includes('status')) {
+                            const jobApps = window.sharedData.getStudentJobApplications(currentUser.email);
+                            const schApps = window.sharedData.getStudentScholarshipApplications(currentUser.email);
+                            const events = window.sharedData.getStudentEventRegistrations(currentUser.email);
+                            reply = `📊 Your Profile:\n• ${jobApps.length} Job Applications\n• ${schApps.length} Scholarship Applications\n• ${events.length} Events Registered\n\nOpening your profile now!`;
+                            navigateTo = 'profile';
+                        } else if (lower.includes('dashboard') || lower.includes('home') || lower.includes('main')) {
+                            reply = "🏠 Taking you to your dashboard!";
+                            navigateTo = 'dashboard';
+                        } else if (lower.includes('ai job') || lower.includes('recommend') || lower.includes('match')) {
+                            reply = "🤖 Here are AI-matched jobs based on your profile!";
+                            navigateTo = 'ai-jobs';
+                        } else if (lower.includes('help') || lower.includes('what can') || lower.includes('how')) {
+                            reply = "💡 I can help you:\n• Find internships & jobs\n• Apply for scholarships\n• Register for events\n• Book counseling sessions\n• Check application status\n\nJust ask me anything!";
+                        } else if (lower.includes('hi') || lower.includes('hello') || lower.includes('hey')) {
+                            reply = "👋 Hi! How can I help you today? Try asking about internships, scholarships, or events!";
+                        } else {
+                            reply = "I understand! Let me help you navigate. Try:\n• 'Show me internships'\n• 'Find scholarships'\n• 'Browse events'\n• 'Book a session'\n• 'My applications'";
+                        }
+
+                        // Instant response (no delay)
+                        app.appendMessage(reply, 'bot');
+                        app.toggleLoader(false);
+                        
+                        if (navigateTo) {
+                            setTimeout(() => app.navigate(navigateTo), 100);
+                        }
+                    }
+                } catch (e) {
+                    console.error(e);
+                    app.appendMessage("Sorry, I encountered an error. Please try again.", 'bot');
+                }
+                app.toggleLoader(false);
+            }
+        };
+
+        // Initialize
+        app.init();
+    </script>
+    <script type="module" src="/index.tsx"></script>
+</body>
+
+</html>
